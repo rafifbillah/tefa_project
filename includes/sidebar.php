@@ -34,6 +34,18 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                         <span>Users</span>
                     </a>
                 </li>
+                <li>
+                    <a href="barang.php" class="menu-item <?php echo ($currentPage == 'barang.php') ? 'active' : ''; ?>">
+                        <i class="fas fa-boxes" aria-hidden="true"></i>
+                        <span>Barang</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="laporan.php" class="menu-item <?php echo ($currentPage == 'laporan.php') ? 'active' : ''; ?>">
+                        <i class="fas fa-chart-bar" aria-hidden="true"></i>
+                        <span>Laporan</span>
+                    </a>
+                </li>
             </ul>
         </nav>
 

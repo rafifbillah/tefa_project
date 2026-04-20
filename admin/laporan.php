@@ -58,8 +58,14 @@ $additionalCSS = 'assets/css/style_laporan.css'; // Hubungkan CSS laporan
             <div class="card-header-flex">
                 <h4>Detail Transaksi (5)</h4>
                 <div class="export-btns">
-                    <button class="btn-export csv"><i class="fas fa-file-csv"></i> CSV/Excel</button>
-                    <button class="btn-export pdf"><i class="fas fa-file-pdf"></i> Cetak PDF</button>
+                    <button class="btn-export btn-export-excel" title="Download data dalam format Excel">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Export Excel</span>
+                    </button>
+                    <button class="btn-export btn-export-pdf" title="Download laporan dalam format PDF">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Cetak PDF</span>
+                    </button>
                 </div>
             </div>
             <div class="table-responsive">

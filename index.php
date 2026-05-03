@@ -5,8 +5,9 @@
  */
 $pageTitle = 'Login';
 $dashboardPage = false;
+$basePath = 'admin/';
 ?>
-<?php include 'includes/header.php'; ?>
+<?php include 'admin/includes/header.php'; ?>
 
     <div class="container">
       <!-- Left Panel - Branding -->
@@ -14,10 +15,9 @@ $dashboardPage = false;
         <div class="overlay"></div>
         <div class="quote-container">
           <blockquote class="quote">
-            "Good bread is the most fundamentally satisfying of all foods; and
-            good bread with fresh butter, the greatest of feasts."
+            "Roti yang baik adalah yang paling memuaskan secara mendasar di antara semua makanan; dan roti yang baik dengan mentega segar, adalah pesta yang paling besar."
           </blockquote>
-          <cite class="author">— James Beard</cite>
+          <cite class="author">----Politeknik Negeri Jember----</cite>
         </div>
       </div>
 
@@ -25,7 +25,7 @@ $dashboardPage = false;
       <div class="right-panel" role="main">
         <div class="login-box">
           <div class="logo">
-            <i class="fas fa-bread-slice" aria-hidden="true"></i>
+             <img src="assets/img/logo.jpg" alt="Logo">
             <span>TEFA Bakery and Coffee</span>
           </div>
 
@@ -41,7 +41,7 @@ $dashboardPage = false;
             aria-live="polite"
           ></div>
 
-          <form id="loginForm" class="login-form" novalidate>
+          <form id="loginForm" class="login-form" method="POST" novalidate>
             <!-- Username Field -->
             <div class="input-group">
               <div class="input-wrapper">
@@ -88,6 +88,7 @@ $dashboardPage = false;
               <span id="passwordHelp" class="input-help">Min. 4 karakter</span>
             </div>
 
+
             <!-- Remember Me & Forgot Password -->
             <div class="form-extras">
               <label class="remember-me">
@@ -118,5 +119,12 @@ $dashboardPage = false;
       </div>
     </div>
 
-<?php include 'includes/footer.php'; ?>
+<?php include 'admin/includes/footer.php'; ?>
+<script>
+  window.loginRedirects = {
+      admin: "admin/index.php",
+      kasir: "kasir/dashboard.php",
+      gudang: "gudang/index.php"
+  };
+</script>
 </html>

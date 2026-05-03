@@ -1,14 +1,19 @@
 <?php
 /**
- * Dashboard Main Page
+ * Dashboard Main Page — Admin
  * TEFA Bakery and Coffee Dashboard
  */
-$pageTitle = 'Dashboard';
+
+$pageTitle    = 'Dashboard';
 $dashboardPage = true;
-$pageHeading = 'Dashboard';
+$pageHeading  = 'Dashboard';
+?>
 ?>
 <?php include 'includes/header.php'; ?>
 <?php include 'includes/sidebar.php'; ?>
+
+        <!-- Flash Messages -->
+        <?= Flash::render() ?>
 
         <!-- Stats Cards -->
         <section class="stats-container" aria-label="Statistics">
@@ -64,30 +69,19 @@ $pageHeading = 'Dashboard';
             <div class="card-header">
               <h4>Statistik Penjualan</h4>
               <div class="filter-tabs" role="tablist">
-                <button role="tab" class="filter-btn" data-filter="day">
-                  Day
-                </button>
-                <button role="tab" class="filter-btn active" data-filter="week">
-                  Week
-                </button>
-                <button role="tab" class="filter-btn" data-filter="month">
-                  Month
-                </button>
+                <button role="tab" class="filter-btn" data-filter="day">Day</button>
+                <button role="tab" class="filter-btn active" data-filter="week">Week</button>
+                <button role="tab" class="filter-btn" data-filter="month">Month</button>
               </div>
             </div>
             <div class="chart-content">
               <p class="balance-label">Total Balance</p>
               <h3 class="balance-amount">
                 <span id="balanceValue">2,982</span>
-                <span class="trend-up"
-                  ><i class="fas fa-arrow-up"></i> 2.45%</span
-                >
+                <span class="trend-up"><i class="fas fa-arrow-up"></i> 2.45%</span>
               </h3>
               <div class="chart-wrapper">
-                <canvas
-                  id="salesLineChart"
-                  aria-label="Sales Statistics Chart"
-                ></canvas>
+                <canvas id="salesLineChart" aria-label="Sales Statistics Chart"></canvas>
               </div>
             </div>
           </div>
@@ -97,10 +91,7 @@ $pageHeading = 'Dashboard';
               <h4>Metode Pembayaran</h4>
             </div>
             <div class="pie-container">
-              <canvas
-                id="paymentPieChart"
-                aria-label="Payment Methods Chart"
-              ></canvas>
+              <canvas id="paymentPieChart" aria-label="Payment Methods Chart"></canvas>
             </div>
           </div>
         </div>
@@ -128,11 +119,7 @@ $pageHeading = 'Dashboard';
                   <td>
                     <div class="prod-info">
                       <div class="prod-img-wrapper">
-                        <img
-                          src="https://images.unsplash.com/photo-1558303035-d41300b031b6?w=80&h=80&fit=crop"
-                          alt="Blueberry Muffin"
-                          loading="lazy"
-                        />
+                        <img src="https://images.unsplash.com/photo-1558303035-d41300b031b6?w=80&h=80&fit=crop" alt="Blueberry Muffin" loading="lazy" />
                       </div>
                       <span>Blueberry Muffin</span>
                     </div>
@@ -144,11 +131,7 @@ $pageHeading = 'Dashboard';
                   <td>
                     <div class="prod-info">
                       <div class="prod-img-wrapper">
-                        <img
-                          src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=80&h=80&fit=crop"
-                          alt="Choco Cupcake"
-                          loading="lazy"
-                        />
+                        <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=80&h=80&fit=crop" alt="Choco Cupcake" loading="lazy" />
                       </div>
                       <span>Choco Cupcake</span>
                     </div>

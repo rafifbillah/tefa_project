@@ -116,8 +116,10 @@
     const passwordError = validatePassword(password);
     if (passwordError) errors.push(passwordError);
 
-    const roleError = validateRole(role);
-    if (roleError) errors.push(roleError);
+    if (elements.role) {
+      const roleError = validateRole(elements.role.value);
+      if (roleError) errors.push(roleError);
+    }
 
     return errors;
   }
@@ -192,7 +194,7 @@
 
     // Redirect after showing success message
     setTimeout(() => {
-      const redirectUrl = config.roleRedirects[user.role] || "index.php";
+      const redirectUrl = (window.loginRedirects && window.loginRedirects[user.role]) || config.roleRedirects[user.role] || "index.php";
       window.location.href = redirectUrl;
     }, 1000);
   }
@@ -232,34 +234,42 @@
    * Handle form submission
    */
   async function handleFormSubmit(e) {
-    e.preventDefault();
-
     // Clear previous alerts
     clearAlert();
 
     // Validate form
     const errors = validateForm();
     if (errors.length > 0) {
+      e.preventDefault();
       showAlert(errors[0], "error");
       return;
     }
+
+    const isServerSubmit = elements.loginForm.getAttribute('method') && elements.loginForm.getAttribute('method').toUpperCase() === 'POST';
+
+    // Set loading state
+    setButtonLoading(true);
+
+    if (isServerSubmit) {
+      // Let it submit naturally to the server
+      return;
+    }
+
+    // Otherwise prevent default and simulate login
+    e.preventDefault();
 
     // Get form values
     const credentials = {
       username: elements.username.value.trim(),
       password: elements.password.value,
-      role: elements.role.value,
+      role: elements.role ? elements.role.value : "admin",
     };
-
-    // Set loading state
-    setButtonLoading(true);
 
     try {
       const response = await simulateLogin(credentials);
       handleLoginSuccess(response.user);
     } catch (error) {
       handleLoginError(error);
-    } finally {
       setButtonLoading(false);
     }
   }

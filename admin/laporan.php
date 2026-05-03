@@ -1,12 +1,14 @@
 <?php
 /**
- * Users Management Page
- * TEFA Bakery and Coffee Users Management
+ * Laporan Management — Admin
  */
-$pageTitle = 'Laporan';
+
+require_once __DIR__ . '/../core/Flash.php';
+
+$pageTitle    = 'Laporan';
 $dashboardPage = true;
-$pageHeading = 'Laporan Management';
-$additionalCSS = 'assets/css/style_laporan.css'; // Hubungkan CSS laporan
+$pageHeading  = 'Laporan Management';
+$additionalCSS = '../assets/css/admin-style_laporan.css';
 ?>
 <?php include 'includes/header.php'; ?>
 <?php include 'includes/sidebar.php'; ?>

@@ -1,11 +1,13 @@
 <?php
 /**
- * Users Management Page
- * TEFA Bakery and Coffee Users Management
+ * Barang Management — Admin
  */
-$pageTitle = 'Barang';
+
+require_once __DIR__ . '/../core/Flash.php';
+
+$pageTitle    = 'Barang';
 $dashboardPage = true;
-$pageHeading = 'Barang Management';
+$pageHeading  = 'Barang Management';
 ?>
 <?php include 'includes/header.php'; ?>
 <?php include 'includes/sidebar.php'; ?>

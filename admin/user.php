@@ -1,19 +1,20 @@
 <?php
+require_once '../core/Auth.php';
+Auth::requireRole('admin');
 /**
- * Halaman Manajemen User — Admin Only
- * -------------------------------------
- * Menampilkan daftar user dan form tambah user baru.
+ * Users Management Page
+ * TEFA Bakery and Coffee Users Management
  */
-
 require_once __DIR__ . '/../models/UserModel.php';
+require_once __DIR__ . '/../core/Auth.php';
 require_once __DIR__ . '/../core/Flash.php';
 
 $userModel   = new UserModel();
 $users       = $userModel->getAll();
-$csrfToken   = 'mock_csrf_token';
+$csrfToken   = Auth::generateCsrfToken();
 $currentUser = ['id' => 0];
 
-$pageTitle    = 'Manajemen User';
+$pageTitle = 'Users';
 $dashboardPage = true;
 $pageHeading  = 'Manajemen User';
 ?>
@@ -27,8 +28,8 @@ $pageHeading  = 'Manajemen User';
     <div class="page-content">
 
         <!-- Tombol Tambah User -->
-        <div class="content-header">
-            <button class="btn-primary" onclick="toggleModal('modalTambahUser')">
+        <div class="content-header" style="margin-bottom: 20px;">
+            <button class="btn-primary" onclick="toggleModal('modalUser')">
                 <i class="fas fa-plus"></i> Tambah User Baru
             </button>
         </div>
@@ -69,12 +70,22 @@ $pageHeading  = 'Manajemen User';
                                 </span>
                             </td>
                             <td>
-                                <span class="status-badge status-<?= $u['status'] === 'active' ? 'active' : 'inactive' ?>">
-                                    <?= $u['status'] === 'active' ? 'Aktif' : 'Nonaktif' ?>
+                                <span class="status-badge status-<?= $u['status'] === 'aktif' ? 'active' : 'inactive' ?>">
+                                    <?= $u['status'] === 'aktif' ? 'Aktif' : 'Nonaktif' ?>
                                 </span>
                             </td>
                             <td>
-                                <?php if ((int)$u['id'] !== (int)$currentUser['id']): ?>
+                                <button class="btn-secondary" onclick="editUser(
+                                    <?= $u['id'] ?>, 
+                                    '<?= htmlspecialchars($u['username'], ENT_QUOTES) ?>', 
+                                    '<?= htmlspecialchars($u['nama_lengkap'], ENT_QUOTES) ?>', 
+                                    '<?= htmlspecialchars($u['role'], ENT_QUOTES) ?>',
+                                    '<?= htmlspecialchars($u['status'], ENT_QUOTES) ?>'
+                                )" style="padding: 6px 10px; font-size: 13px; margin-right: 5px;">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                
+                                <?php if ((int)$u['id'] !== (int)($currentUser['id'] ?? 0)): ?>
                                 <!-- Form Delete dengan CSRF -->
                                 <form method="POST" action="../controllers/AuthController.php"
                                       onsubmit="return confirm('Hapus user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?')"
@@ -97,21 +108,20 @@ $pageHeading  = 'Manajemen User';
                 </table>
             </div>
         </section>
-    </div>
-
-    <!-- ═══ MODAL: Tambah User Baru ═══ -->
-    <div id="modalTambahUser" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" style="display:none;">
+    </div>    <!-- ═══ MODAL: Tambah/Edit User ═══ -->
+    <div id="modalUser" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" style="display:none;">
         <div class="modal-box">
             <div class="modal-header">
                 <h3 id="modalTitle"><i class="fas fa-user-plus"></i> Tambah User Baru</h3>
-                <button class="modal-close" onclick="toggleModal('modalTambahUser')" aria-label="Tutup modal">
+                <button class="modal-close" onclick="toggleModal('modalUser')" aria-label="Tutup modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <form method="POST" action="../controllers/AuthController.php" class="register-form" novalidate>
+            <form method="POST" action="../controllers/AuthController.php" class="register-form" id="formUser" novalidate>
                 <!-- ─── SECURITY: CSRF Token ─── -->
-                <input type="hidden" name="action" value="register">
+                <input type="hidden" name="action" id="formAction" value="register">
+                <input type="hidden" name="user_id" id="user_id" value="">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
 
                 <!-- Username -->
@@ -120,7 +130,7 @@ $pageHeading  = 'Manajemen User';
                     <input type="text" id="reg_username" name="username"
                            required minlength="3" maxlength="100"
                            placeholder="Masukkan username" autocomplete="off">
-                    <small class="form-hint">Min. 3 karakter, tanpa spasi</small>
+                    <small class="form-hint">Min. 3 karakter, tanpa spasi (tidak dapat diubah setelah dibuat)</small>
                 </div>
 
                 <!-- Nama Lengkap -->
@@ -131,37 +141,49 @@ $pageHeading  = 'Manajemen User';
                            placeholder="Masukkan nama lengkap">
                 </div>
 
-                <!-- Role -->
-                <div class="form-group">
-                    <label for="reg_role">Role <span class="required">*</span></label>
-                    <select id="reg_role" name="role" required>
-                        <option value="">-- Pilih Role --</option>
-                        <option value="admin">Admin</option>
-                        <option value="kasir">Kasir</option>
-                        <option value="gudang">Gudang</option>
-                    </select>
+                <div style="display:flex; gap:16px; margin-bottom:16px;">
+                    <!-- Role -->
+                    <div class="form-group" style="flex:1; margin-bottom:0;">
+                        <label for="reg_role">Role <span class="required">*</span></label>
+                        <select id="reg_role" name="role" required>
+                            <option value="">-- Pilih Role --</option>
+                            <option value="admin">Admin</option>
+                            <option value="kasir">Kasir</option>
+                            <option value="gudang">Gudang</option>
+                        </select>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="form-group" style="flex:1; margin-bottom:0;">
+                        <label for="reg_status">Status <span class="required">*</span></label>
+                        <select id="reg_status" name="status" required>
+                            <option value="aktif">Aktif</option>
+                            <option value="non-aktif">Nonaktif</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Password -->
                 <div class="form-group">
-                    <label for="reg_password">Password <span class="required">*</span></label>
+                    <label id="label_password" for="reg_password">Password <span class="required">*</span></label>
                     <div class="password-wrapper">
                         <input type="password" id="reg_password" name="password"
-                               required minlength="6" maxlength="255"
+                               minlength="6" maxlength="255"
                                placeholder="Min. 6 karakter">
                         <button type="button" class="toggle-pass" aria-label="Tampilkan password"
                                 onclick="togglePass('reg_password', this)">
                             <i class="far fa-eye"></i>
                         </button>
                     </div>
+                    <small id="hint_password" class="form-hint" style="display:none;">Kosongkan jika tidak ingin mengubah password.</small>
                 </div>
 
                 <!-- Konfirmasi Password -->
-                <div class="form-group">
+                <div class="form-group" id="group_confirm">
                     <label for="reg_confirm">Konfirmasi Password <span class="required">*</span></label>
                     <div class="password-wrapper">
                         <input type="password" id="reg_confirm" name="confirm_password"
-                               required minlength="6" maxlength="255"
+                               minlength="6" maxlength="255"
                                placeholder="Ulangi password">
                         <button type="button" class="toggle-pass" aria-label="Tampilkan konfirmasi"
                                 onclick="togglePass('reg_confirm', this)">
@@ -172,7 +194,7 @@ $pageHeading  = 'Manajemen User';
 
                 <!-- Submit -->
                 <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="toggleModal('modalTambahUser')">
+                    <button type="button" class="btn-secondary" onclick="toggleModal('modalUser')">
                         Batal
                     </button>
                     <button type="submit" class="btn-primary">
@@ -180,6 +202,7 @@ $pageHeading  = 'Manajemen User';
                     </button>
                 </div>
             </form>
+        </div>    </form>
         </div>
     </div>
 
@@ -229,7 +252,6 @@ $pageHeading  = 'Manajemen User';
     inset: 0;
     background: rgba(0,0,0,0.5);
     z-index: 9999;
-    display: flex !important;
     align-items: center;
     justify-content: center;
 }
@@ -359,8 +381,54 @@ $pageHeading  = 'Manajemen User';
 function toggleModal(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
-    const isVisible = modal.style.display !== 'none' && modal.style.display !== '';
-    modal.style.display = isVisible ? 'none' : 'flex';
+    
+    if (modal.style.display === 'none' || modal.style.display === '') {
+        // Reset form for Add User
+        document.getElementById('formUser').reset();
+        document.getElementById('formAction').value = 'register';
+        document.getElementById('user_id').value = '';
+        
+        document.getElementById('reg_username').readOnly = false;
+        document.getElementById('reg_password').required = true;
+        document.getElementById('reg_confirm').required = true;
+        document.getElementById('label_password').innerHTML = 'Password <span class="required">*</span>';
+        document.getElementById('hint_password').style.display = 'none';
+        document.getElementById('group_confirm').style.display = 'block';
+        
+        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus"></i> Tambah User Baru';
+        
+        modal.style.display = 'flex';
+    } else {
+        modal.style.display = 'none';
+    }
+}
+
+/**
+ * Persiapkan form untuk Edit User
+ */
+function editUser(id, username, nama, role, status) {
+    const modal = document.getElementById('modalUser');
+    
+    document.getElementById('formAction').value = 'update_user';
+    document.getElementById('user_id').value = id;
+    
+    document.getElementById('reg_username').value = username;
+    document.getElementById('reg_username').readOnly = true; // Prevent changing username
+    
+    document.getElementById('reg_nama').value = nama;
+    document.getElementById('reg_role').value = role;
+    document.getElementById('reg_status').value = status;
+    
+    // Optional password fields for update
+    document.getElementById('reg_password').required = false;
+    document.getElementById('reg_confirm').required = false;
+    document.getElementById('label_password').innerHTML = 'Password Baru (Opsional)';
+    document.getElementById('hint_password').style.display = 'block';
+    document.getElementById('group_confirm').style.display = 'none'; // Konfirmasi tidak diwajibkan saat update dari admin jika tidak ganti pass
+    
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-edit"></i> Edit User';
+    
+    modal.style.display = 'flex';
 }
 
 /**
@@ -380,7 +448,7 @@ function togglePass(inputId, btn) {
 
 // Tutup modal jika klik di luar box
 document.addEventListener('click', function(e) {
-    const modal = document.getElementById('modalTambahUser');
+    const modal = document.getElementById('modalUser');
     if (modal && e.target === modal) {
         modal.style.display = 'none';
     }

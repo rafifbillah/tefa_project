@@ -1,4 +1,6 @@
 <?php
+require_once '../core/Auth.php';
+Auth::requireRole('gudang');
 /**
  * Dashboard Gudang — TEFA Bakery & Coffee
  */

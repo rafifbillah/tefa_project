@@ -1,153 +1,293 @@
 <?php 
-$page_title = "Laporan Shift";
-$page_subtitle = "RIWAYAT TRANSAKSI";
+require_once '../core/Auth.php';
+Auth::requireRole('kasir');
+
+require_once '../models/LaporanModel.php';
+
+$laporanModel = new LaporanModel();
+
+// Ambil parameter filter
+$method = isset($_GET['method']) ? strtolower($_GET['method']) : 'semua';
+$methodFilter = ($method === 'semua') ? null : $method;
+
+// Filter Tanggal - Default tampilkan SEMUA jika tidak dipilih agar data selalu terlihat
+$selectedDate = isset($_GET['date']) && $_GET['date'] !== '' ? $_GET['date'] : null;
+
+// Eksekusi query model
+$transactions = $laporanModel->getTransactions($selectedDate, $selectedDate, $methodFilter);
+$stats = $laporanModel->getSummaryStats($selectedDate, $selectedDate, $methodFilter);
+
+$totalTransaksi = count($transactions);
+$totalPendapatan = $stats['total_pendapatan'] ?? 0;
+$rataRata = $stats['rata_rata_transaksi'] ?? 0;
+
+// Menentukan nama kasir yang aktif
+$kasirAktif = $_SESSION['nama_lengkap'] ?? 'Kasir';
+
+$page_title = "Laporan Transaksi";
+$subtitle_date = $selectedDate ? date('d M Y', strtotime($selectedDate)) : 'Semua Waktu';
+$page_subtitle = "Ringkasan performa penjualan dan audit transaksi (" . $subtitle_date . ")";
 include 'includes/header.php'; 
 ?>
 
-<!-- <link rel="stylesheet" href="../assets/css/kasir-laporan.css"> -->
+<style>
+    :root {
+        --primary: #D97706;
+        --primary-dark: #B45309;
+        --secondary: #2D1A11;
+        --accent: #F59E0B;
+        --surface: #FFFFFF;
+        --background: #F8FAFC;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .stat-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    @media print {
+        aside, header.main-header, .no-print, #print-btn, .filter-container {
+            display: none !important;
+        }
+        main {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+            width: 100% !important;
+        }
+        .max-w-7xl {
+            max-width: 100% !important;
+            padding: 0 !important;
+        }
+        .glass-card {
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+        }
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 1000;
+        display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px);
+        animation: fadeIn 0.2s ease-out;
+    }
+    .modal-box {
+        background: #fff; width: 90%; max-width: 500px; border-radius: 2rem; overflow: hidden;
+        animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(30px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+    .modal-header { padding: 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { padding: 2rem; max-height: 60vh; overflow-y: auto; }
+    .modal-footer { padding: 1.5rem 2rem; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; }
+</style>
 
 <?php include 'includes/sidebar.php'; ?>
 
-<main class="flex-1 overflow-y-auto bg-[#F8FAFC]">
+<main class="flex-1 overflow-y-auto bg-[#F8FAFC] font-['Inter']">
     
     <?php include 'includes/topbar.php'; ?>
 
-    <div class="max-w-7xl mx-auto px-8 pb-8 mt-6">
+    <div class="max-w-7xl mx-auto px-6 py-8">
 
-        <div class="flex justify-between items-end mb-8">
-            <div>
-                <h2 class="text-3xl font-black text-gray-900 tracking-tight">Laporan Shift</h2>
-                <p class="text-gray-500 font-medium mt-1">Kelola dan pantau seluruh riwayat transaksi hari ini.</p>
+        <!-- Filter & Action Bar -->
+        <div class="glass-card rounded-3xl p-6 mb-8 no-print flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 filter-container">
+            <form method="GET" class="flex flex-wrap items-center gap-6">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Pilih Tanggal</label>
+                    <input type="date" name="date" value="<?= $selectedDate ?? '' ?>" onchange="this.form.submit()" class="bg-gray-50 border-none text-gray-700 py-3 px-6 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-[#D97706] hover:bg-gray-100 transition-all cursor-pointer">
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Metode Pembayaran</label>
+                    <div class="relative">
+                        <select name="method" onchange="this.form.submit()" class="appearance-none bg-gray-50 border-none text-gray-700 py-3 pl-6 pr-14 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-[#D97706] cursor-pointer hover:bg-gray-100 transition-all">
+                            <option value="semua" <?= $method === 'semua' ? 'selected' : '' ?>>Semua Metode</option>
+                            <option value="tunai" <?= $method === 'tunai' ? 'selected' : '' ?>>💵 Tunai</option>
+                            <option value="qris" <?= $method === 'qris' ? 'selected' : '' ?>>📱 QRIS</option>
+                            <option value="transfer" <?= $method === 'transfer' ? 'selected' : '' ?>>🏦 Transfer</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"></i>
+                    </div>
+                </div>
+
+                <?php if ($selectedDate !== null || $method !== 'semua'): ?>
+                <div class="flex items-end h-full pt-6">
+                    <a href="laporan.php" class="text-xs font-bold text-[#D97706] hover:underline">Reset Filter</a>
+                </div>
+                <?php endif; ?>
+            </form>
+
+            <div class="flex items-center gap-3">
+                <a href="export_excel.php?<?= http_build_query($_GET) ?>" class="bg-[#e8f5e9] text-[#2e7d32] px-6 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 hover:bg-[#c8e6c9] transition-all duration-300 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-file-excel"></i> EXCEL
+                </a>
+                <button onclick="window.print()" class="bg-[#2D1A11] text-white px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 hover:bg-[#D97706] transition-all duration-300 shadow-lg shadow-black/10 hover:shadow-orange-500/20 active:scale-95">
+                    <i class="fa-solid fa-print"></i> CETAK / PDF
+                </button>
             </div>
-            <button id="print-btn" class="bg-[#2D1A11] text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-3 hover:bg-[#D97706] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 cursor-pointer">
-                <i class="fa-solid fa-print"></i> CETAK LAPORAN
-            </button>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            
-            <div class="bg-gradient-to-r from-orange-50 to-white p-6 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-gray-100">
-                
-                <div class="flex flex-wrap items-center gap-4 md:gap-8">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-[#D97706] text-xl">
-                            <i class="fa-solid fa-receipt"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-black text-gray-900">Rincian Pesanan</h3>
-                            <p class="text-sm text-gray-500 font-medium">12 Transaksi Hari Ini</p>
-                        </div>
-                    </div>
-                    
-                    <div class="hidden md:block w-px h-10 bg-gray-200"></div>
-
-                    <div>
-                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">KASIR AKTIF</p>
-                        <p class="text-gray-900 font-bold flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                            Andhika <span class="text-[#D97706]">(Shift Pagi)</span>
-                        </p>
-                    </div>
-
-                    <div class="hidden md:block w-px h-10 bg-gray-200"></div>
-
-                    <div>
-                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">TOTAL KOTOR</p>
-                        <p class="text-2xl font-black text-gray-900">Rp 214.000</p>
-                    </div>
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="glass-card stat-card p-6 rounded-3xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10">
+                    <i class="fa-solid fa-money-bill-trend-up text-6xl"></i>
                 </div>
-
-                <div class="relative w-full md:w-auto">
-                    <select id="payment-filter" class="w-full md:w-auto appearance-none bg-white border border-gray-200 text-gray-700 py-3 pl-5 pr-12 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-[#D97706] cursor-pointer shadow-sm hover:border-[#D97706] transition-colors">
-                        <option value="semua">Semua Metode Pembayaran</option>
-                        <option value="tunai">Hanya TUNAI</option>
-                        <option value="qris">Hanya QRIS</option>
-                    </select>
-                    <i class="fa-solid fa-caret-down absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                </div>
+                <p class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Total Pendapatan</p>
+                <h3 class="text-3xl font-black text-gray-900 mb-2">Rp <?= number_format($totalPendapatan, 0, ',', '.') ?></h3>
             </div>
 
+            <div class="glass-card stat-card p-6 rounded-3xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10">
+                    <i class="fa-solid fa-receipt text-6xl"></i>
+                </div>
+                <p class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Total Transaksi</p>
+                <h3 class="text-3xl font-black text-gray-900 mb-2"><?= $totalTransaksi ?></h3>
+            </div>
+
+            <div class="glass-card stat-card p-6 rounded-3xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10">
+                    <i class="fa-solid fa-chart-line text-6xl"></i>
+                </div>
+                <p class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Rata-rata / Order</p>
+                <h3 class="text-3xl font-black text-gray-900 mb-2">Rp <?= number_format($rataRata, 0, ',', '.') ?></h3>
+            </div>
+        </div>
+
+        <!-- Main Content Table Card -->
+        <div class="glass-card rounded-[2.5rem] overflow-hidden border-none shadow-xl shadow-black/5">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-gray-50 border-b border-gray-100">
-                            <th class="py-4 px-6 text-gray-400 font-bold uppercase tracking-widest text-xs">Waktu</th>
-                            <th class="py-4 px-6 text-gray-400 font-bold uppercase tracking-widest text-xs">ID Pesanan</th>
-                            <th class="py-4 px-6 text-gray-400 font-bold uppercase tracking-widest text-xs">Detail Item</th>
-                            <th class="py-4 px-6 text-gray-400 font-bold uppercase tracking-widest text-xs">Metode</th>
-                            <th class="py-4 px-6 text-gray-400 font-bold uppercase tracking-widest text-xs text-right">Total</th>
+                        <tr class="bg-gray-50/50">
+                            <th class="py-5 px-8 text-gray-400 font-bold uppercase tracking-widest text-[10px]">Waktu</th>
+                            <th class="py-5 px-8 text-gray-400 font-bold uppercase tracking-widest text-[10px]">Reference ID</th>
+                            <th class="py-5 px-8 text-gray-400 font-bold uppercase tracking-widest text-[10px]">Item Terjual</th>
+                            <th class="py-5 px-8 text-gray-400 font-bold uppercase tracking-widest text-[10px]">Metode</th>
+                            <th class="py-5 px-8 text-gray-400 font-bold uppercase tracking-widest text-[10px] text-right">Total Tagihan</th>
+                            <th class="py-5 px-8 text-gray-400 font-bold uppercase tracking-widest text-[10px] text-center no-print">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        
-                        <tr class="hover:bg-orange-50/30 transition-colors group">
-                            <td class="py-5 px-6 font-bold text-gray-400 group-hover:text-[#D97706] transition-colors">14:15</td>
-                            <td class="py-5 px-6 font-black text-gray-900">#ORD-0044</td>
-                            <td class="py-5 px-6">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-lg bg-orange-100 text-[#D97706] flex items-center justify-center text-xs"><i class="fa-solid fa-mug-hot"></i></div>
-                                    <p class="font-bold text-gray-900">1x Cappuccino (Hot)</p>
+                    <tbody class="divide-y divide-gray-50">
+                        <?php if (empty($transactions)): ?>
+                        <tr>
+                            <td colspan="6" class="py-20 text-center">
+                                <div class="flex flex-col items-center gap-3">
+                                    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 text-3xl">
+                                        <i class="fa-solid fa-folder-open"></i>
+                                    </div>
+                                    <p class="text-gray-400 font-bold italic">Belum ada transaksi di database untuk filter ini.</p>
                                 </div>
                             </td>
-                            <td class="py-5 px-6">
-                                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-md text-xs font-black tracking-wide">TUNAI</span>
-                            </td>
-                            <td class="py-5 px-6 font-black text-gray-900 text-right">Rp 25.000</td>
                         </tr>
-
-                        <tr class="hover:bg-orange-50/30 transition-colors group">
-                            <td class="py-5 px-6 font-bold text-gray-400 group-hover:text-[#D97706] transition-colors">14:15</td>
-                            <td class="py-5 px-6 font-black text-gray-900">#ORD-0042</td>
-                            <td class="py-5 px-6">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-lg bg-[#382216]/10 text-[#382216] flex items-center justify-center text-xs"><i class="fa-solid fa-bread-slice"></i></div>
-                                    <p class="font-bold text-gray-900">2x Sourdough Loaf</p>
-                                </div>
-                            </td>
-                            <td class="py-5 px-6">
-                                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-md text-xs font-black tracking-wide">TUNAI</span>
-                            </td>
-                            <td class="py-5 px-6 font-black text-gray-900 text-right">Rp 50.000</td>
-                        </tr>
-
-                        <tr class="hover:bg-orange-50/30 transition-colors group">
-                            <td class="py-5 px-6 font-bold text-gray-400 group-hover:text-[#D97706] transition-colors">14:30</td>
-                            <td class="py-5 px-6 font-black text-gray-900">#ORD-0045</td>
-                            <td class="py-5 px-6">
-                                <p class="font-bold text-gray-900 flex items-center gap-2"><i class="fa-solid fa-mug-hot text-gray-400 text-xs"></i> 2x Americano (Ice)</p>
-                                <p class="font-medium text-gray-500 mt-1 flex items-center gap-2"><i class="fa-solid fa-bread-slice text-gray-300 text-xs"></i> 1x Sourdough Loaf</p>
-                            </td>
-                            <td class="py-5 px-6">
-                                <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-md text-xs font-black tracking-wide">QRIS</span>
-                            </td>
-                            <td class="py-5 px-6 font-black text-gray-900 text-right">Rp 55.000</td>
-                        </tr>
-
-                        <tr class="hover:bg-orange-50/30 transition-colors group">
-                            <td class="py-5 px-6 font-bold text-gray-400 group-hover:text-[#D97706] transition-colors">14:30</td>
-                            <td class="py-5 px-6 font-black text-gray-900">#ORD-0043</td>
-                            <td class="py-5 px-6">
-                                <p class="font-bold text-gray-900 flex items-center gap-2"><i class="fa-solid fa-bread-slice text-gray-400 text-xs"></i> 3x Croissant Butter</p>
-                                <p class="font-medium text-gray-500 mt-1 flex items-center gap-2"><i class="fa-solid fa-mug-hot text-gray-300 text-xs"></i> 1x Kopi Macengar</p>
-                            </td>
-                            <td class="py-5 px-6">
-                                <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-md text-xs font-black tracking-wide">QRIS</span>
-                            </td>
-                            <td class="py-5 px-6 font-black text-gray-900 text-right">Rp 84.000</td>
-                        </tr>
-
+                        <?php else: ?>
+                            <?php foreach ($transactions as $trx): 
+                                $details = $laporanModel->getTransactionDetails($trx['id']);
+                                $time = date('H:i', strtotime($trx['created_at']));
+                                $date = date('d/m/Y', strtotime($trx['created_at']));
+                                
+                                $metode = strtoupper($trx['metode_bayar']);
+                                if ($metode === 'TUNAI') {
+                                    $badgeStyle = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
+                                } elseif ($metode === 'QRIS') {
+                                    $badgeStyle = 'bg-blue-50 text-blue-600 border border-blue-100';
+                                } elseif ($metode === 'TRANSFER') {
+                                    $badgeStyle = 'bg-amber-50 text-amber-600 border border-amber-100';
+                                } else {
+                                    $badgeStyle = 'bg-gray-50 text-gray-600 border border-gray-100';
+                                }
+                            ?>
+                            <tr class="hover:bg-orange-50/20 transition-all group">
+                                <td class="py-6 px-8">
+                                    <div class="flex flex-col">
+                                        <span class="font-black text-gray-900"><?= $time ?></span>
+                                        <span class="text-[10px] text-gray-400 font-bold uppercase"><?= $date ?></span>
+                                    </div>
+                                </td>
+                                <td class="py-6 px-8">
+                                    <span class="font-mono text-sm font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg">
+                                        <?= htmlspecialchars($trx['transaction_id']) ?>
+                                    </span>
+                                </td>
+                                <td class="py-6 px-8">
+                                    <div class="flex flex-col gap-1.5">
+                                        <?php 
+                                        $totalItems = count($details);
+                                        if ($totalItems === 0): ?>
+                                            <span class="text-xs text-gray-400 italic">Detail tidak tersedia</span>
+                                        <?php else: 
+                                            $firstItem = $details[0];
+                                            ?>
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-1.5 h-1.5 rounded-full bg-orange-300"></div>
+                                                <span class="text-sm font-bold text-gray-800">
+                                                    <span class="text-orange-600"><?= $firstItem['jumlah'] ?>x</span> 
+                                                    <?= htmlspecialchars($firstItem['nama_produk']) ?>
+                                                    <?php if ($totalItems > 1): ?>
+                                                        <span class="text-gray-400 font-medium text-[11px] ml-1">
+                                                            (+<?= $totalItems - 1 ?> item lainnya)
+                                                        </span>
+                                                    <?php endif; ?>
+                                                </span>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                                <td class="py-6 px-8">
+                                    <span class="<?= $badgeStyle ?> px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-sm">
+                                        <?= $metode ?>
+                                    </span>
+                                </td>
+                                <td class="py-6 px-8 text-right">
+                                    <span class="text-lg font-black text-gray-900 tracking-tight">
+                                        Rp <?= number_format($trx['total_harga'], 0, ',', '.') ?>
+                                    </span>
+                                </td>
+                                <td class="py-6 px-8 text-center no-print">
+                                    <div class="flex items-center justify-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity duration-300">
+                                        <!-- Tombol Detail -->
+                                        <button onclick='openDetailModal("<?= $trx["transaction_id"] ?>", "<?= $time ?>", "<?= $date ?>", "<?= $metode ?>", "<?= number_format($trx["total_harga"], 0, ",", ".") ?>", <?= json_encode($details) ?>, "<?= $badgeStyle ?>")' class="w-9 h-9 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900 flex items-center justify-center transition-colors shadow-sm" title="Lihat Rincian">
+                                            <i class="fa-solid fa-eye text-sm"></i>
+                                        </button>
+                                        <!-- Tombol Cetak Ulang -->
+                                        <a href="cetak_struk.php?id=<?= $trx['id'] ?>" target="_blank" class="w-9 h-9 rounded-xl bg-[#2D1A11]/10 text-[#2D1A11] hover:bg-[#2D1A11] hover:text-white flex items-center justify-center transition-colors shadow-sm" title="Cetak Ulang Struk">
+                                            <i class="fa-solid fa-print text-sm"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
             
-            <div class="bg-gray-50 p-4 border-t border-gray-100 flex items-center justify-between text-sm">
-                <span class="text-gray-500 font-medium">Menampilkan <span class="font-bold text-gray-900">1</span> sampai <span class="font-bold text-gray-900">4</span> dari <span class="font-bold text-gray-900">12</span> data</span>
-                <div class="flex gap-1">
-                    <button class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-white hover:text-gray-900 transition-colors disabled:opacity-50"><i class="fa-solid fa-chevron-left"></i></button>
-                    <button class="w-8 h-8 rounded-lg bg-[#D97706] flex items-center justify-center text-white font-bold shadow-sm">1</button>
-                    <button class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-white hover:text-gray-900 transition-colors">2</button>
-                    <button class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-white hover:text-gray-900 transition-colors">3</button>
-                    <button class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-white hover:text-gray-900 transition-colors"><i class="fa-solid fa-chevron-right"></i></button>
+            <!-- Table Footer -->
+            <div class="bg-gray-50/50 p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400">
+                        <i class="fa-solid fa-database"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">Total Baris</p>
+                        <p class="text-sm font-black text-gray-900"><?= $totalTransaksi ?> Entri Ditemukan</p>
+                    </div>
                 </div>
             </div>
 
@@ -155,6 +295,80 @@ include 'includes/header.php';
     </div>
 </main>
 
-<!-- <script src="../assets/js/kasir-laporan.js"></script> -->
+<!-- ═══ MODAL DETAIL TRANSAKSI ═══ -->
+<div id="detailModal" class="modal-overlay" onclick="closeDetailModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <div>
+                <h3 class="text-xl font-black text-gray-900" id="modalTrxId">Detail Transaksi</h3>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1" id="modalTrxTime"></p>
+            </div>
+            <button onclick="closeDetailModal()" class="w-10 h-10 rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-all flex items-center justify-center">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div id="modalContent">
+                <!-- Data item diinjeksi via JS -->
+            </div>
+            <div class="mt-8 pt-6 border-t border-gray-100">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-gray-400 font-bold text-xs uppercase tracking-widest">Metode Pembayaran</span>
+                    <span id="modalPayment" class="px-3 py-1 rounded-lg text-[10px] font-black uppercase"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-900 font-black text-lg">Total Akhir</span>
+                    <span id="modalTotal" class="text-2xl font-black text-[#D97706]"></span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="closeDetailModal()" class="px-8 py-3 rounded-2xl bg-gray-100 text-gray-600 font-bold text-sm hover:bg-gray-200 transition-all active:scale-95">Tutup Detail</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openDetailModal(trxId, time, date, method, total, items, badgeStyle) {
+    document.getElementById('modalTrxId').innerText = '#' + trxId;
+    document.getElementById('modalTrxTime').innerText = date + ' • ' + time;
+    document.getElementById('modalTotal').innerText = 'Rp ' + total;
+    
+    const paymentEl = document.getElementById('modalPayment');
+    paymentEl.innerText = method;
+    paymentEl.className = badgeStyle + ' px-3 py-1 rounded-lg text-[10px] font-black uppercase shadow-sm';
+
+    let html = '<div class="space-y-4">';
+    items.forEach(item => {
+        html += `
+            <div class="flex justify-between items-center py-4 border-b border-gray-50 last:border-0">
+                <div class="flex items-center gap-4">
+                    <div class="w-11 h-11 rounded-2xl bg-orange-50 text-[#D97706] flex items-center justify-center font-black text-sm shrink-0 border border-orange-100/50">
+                        ${item.jumlah}x
+                    </div>
+                    <div>
+                        <p class="font-black text-gray-900 leading-tight">${item.nama_produk}</p>
+                        <p class="text-[10px] text-gray-400 font-black uppercase tracking-wider mt-0.5">Rp ${Number(item.harga_satuan).toLocaleString('id-ID')}</p>
+                    </div>
+                </div>
+                <p class="font-black text-gray-900 text-sm">Rp ${Number(item.jumlah * item.harga_satuan).toLocaleString('id-ID')}</p>
+            </div>
+        `;
+    });
+    html += '</div>';
+    document.getElementById('modalContent').innerHTML = html;
+
+    document.getElementById('detailModal').style.display = 'flex';
+}
+
+function closeDetailModal() {
+    document.getElementById('detailModal').style.display = 'none';
+}
+
+// Tutup modal dengan tombol Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === "Escape") closeDetailModal();
+});
+</script>
 
 <?php include 'includes/footer.php'; ?>

@@ -20,11 +20,17 @@
 <?php include __DIR__ . '/sidebar.php'; ?>
 
 <main class="main-content">
+<?php
+$currentUser = Auth::user();
+$namaLengkap = htmlspecialchars($currentUser['nama_lengkap'] ?? 'Gudang');
+$roleLabel   = ucfirst($currentUser['role'] ?? 'gudang');
+$initial     = strtoupper(substr($namaLengkap, 0, 1));
+?>
     <header class="main-header">
         <div class="header-left">
             <h1 class="page-title"><?php echo isset($pageTitle) ? $pageTitle : 'Dashboard'; ?></h1>
             <?php if (!isset($page) || $page == 'dashboard') : ?>
-            <p class="page-subtitle">Selamat Datang Kembali, Kepala Gudang</p>
+            <p class="page-subtitle">Selamat Datang Kembali, <?php echo $namaLengkap; ?></p>
             <?php endif; ?>
         </div>
         <div class="header-right" style="display: flex; align-items: center; gap: 30px;">
@@ -33,11 +39,11 @@
             </div>
             <div class="user-profile">
                 <div class="user-info">
-                    <div class="user-role">King</div>
-                    <div class="user-name">Kepala Gudang</div>
+                    <div class="user-role"><?php echo $roleLabel; ?></div>
+                    <div class="user-name"><?php echo $namaLengkap; ?></div>
                 </div>
                 <div class="user-avatar-container">
-                    <div class="user-avatar">KG</div>
+                    <div class="user-avatar"><?php echo $initial; ?></div>
                     <span class="online-indicator"></span>
                 </div>
             </div>

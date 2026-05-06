@@ -106,7 +106,7 @@
   function validateForm() {
     const username = elements.username.value.trim();
     const password = elements.password.value;
-    const role = elements.role.value;
+    const role = elements.role ? elements.role.value : null;
 
     const errors = [];
 

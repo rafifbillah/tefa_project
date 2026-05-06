@@ -1,13 +1,79 @@
 <?php
+require_once '../core/Auth.php';
+require_once '../models/LaporanModel.php';
+Auth::requireRole('admin');
+
 /**
  * Dashboard Main Page — Admin
- * TEFA Bakery and Coffee Dashboard
  */
 
 $pageTitle    = 'Dashboard';
 $dashboardPage = true;
 $pageHeading  = 'Dashboard';
-?>
+
+$laporanModel = new LaporanModel();
+$stats = $laporanModel->getSummaryStats();
+$totalTransaksi = $stats['total_transaksi'] ?? 0;
+$totalPendapatan = $stats['total_pendapatan'] ?? 0;
+
+$bestSellers = $laporanModel->getBestSellers(5);
+
+$transactions = $laporanModel->getTransactions();
+$paymentStats = [
+    'tunai' => 0,
+    'transfer' => 0,
+    'qris' => 0
+];
+
+foreach ($transactions as $trx) {
+    $method = strtolower($trx['metode_bayar'] ?? '');
+    if (array_key_exists($method, $paymentStats)) {
+        $paymentStats[$method]++;
+    } elseif ($method !== '') {
+        $paymentStats[$method] = 1;
+    }
+}
+
+$totalPayment = array_sum($paymentStats);
+$paymentData = [];
+$paymentLabels = [];
+
+foreach ($paymentStats as $method => $count) {
+    $paymentLabels[] = ucfirst($method);
+    $percentage = $totalPayment > 0 ? round(($count / $totalPayment) * 100) : 0;
+    $paymentData[] = $percentage;
+}
+
+// Persiapkan data untuk Line Chart (7 hari terakhir)
+$salesData = [];
+$salesLabels = [];
+for ($i = 6; $i >= 0; $i--) {
+    $date = date('Y-m-d', strtotime("-$i days"));
+    $salesLabels[] = date('d M', strtotime($date));
+    $salesData[$date] = 0;
+}
+
+foreach ($transactions as $trx) {
+    // Abaikan jika ada status void
+    if (isset($trx['status']) && $trx['status'] === 'void') continue;
+    
+    $date = date('Y-m-d', strtotime($trx['created_at']));
+    if (isset($salesData[$date])) {
+        $salesData[$date] += (float)$trx['total_harga'];
+    }
+}
+$chartData = array_values($salesData);
+
+$dashboardData = [
+    'paymentMethods' => [
+        'labels' => $paymentLabels,
+        'data' => $paymentData
+    ],
+    'salesChart' => [
+        'labels' => $salesLabels,
+        'data' => $chartData
+    ]
+];
 ?>
 <?php include 'includes/header.php'; ?>
 <?php include 'includes/sidebar.php'; ?>
@@ -23,7 +89,7 @@ $pageHeading  = 'Dashboard';
             </div>
             <div class="stat-details">
               <p>Total Transaksi</p>
-              <h3 class="counter" data-target="128">0</h3>
+              <h3 class="counter" data-target="<?= htmlspecialchars($totalTransaksi) ?>">0</h3>
             </div>
           </article>
 
@@ -33,7 +99,7 @@ $pageHeading  = 'Dashboard';
             </div>
             <div class="stat-details">
               <p>Total Pendapatan</p>
-              <h3>Rp <span class="counter" data-target="4250000">0</span></h3>
+              <h3>Rp <span class="counter" data-target="<?= htmlspecialchars($totalPendapatan) ?>">0</span></h3>
             </div>
           </article>
 
@@ -77,8 +143,7 @@ $pageHeading  = 'Dashboard';
             <div class="chart-content">
               <p class="balance-label">Total Balance</p>
               <h3 class="balance-amount">
-                <span id="balanceValue">2,982</span>
-                <span class="trend-up"><i class="fas fa-arrow-up"></i> 2.45%</span>
+                Rp <span class="counter" data-target="<?= htmlspecialchars($totalPendapatan) ?>">0</span>
               </h3>
               <div class="chart-wrapper">
                 <canvas id="salesLineChart" aria-label="Sales Statistics Chart"></canvas>
@@ -115,30 +180,25 @@ $pageHeading  = 'Dashboard';
                 </tr>
               </thead>
               <tbody>
+                <?php foreach ($bestSellers as $index => $product): ?>
                 <tr>
                   <td>
                     <div class="prod-info">
                       <div class="prod-img-wrapper">
-                        <img src="https://images.unsplash.com/photo-1558303035-d41300b031b6?w=80&h=80&fit=crop" alt="Blueberry Muffin" loading="lazy" />
+                        <img src="https://images.unsplash.com/photo-1558303035-d41300b031b6?w=80&h=80&fit=crop" alt="<?= htmlspecialchars($product['nama_produk']) ?>" loading="lazy" />
                       </div>
-                      <span>Blueberry Muffin</span>
+                      <span><?= htmlspecialchars($product['nama_produk']) ?></span>
                     </div>
                   </td>
-                  <td><code class="sku-code">BM-102</code></td>
-                  <td><span class="sold-count">x214</span></td>
+                  <td><code class="sku-code">SKU-<?= str_pad($index + 1, 3, '0', STR_PAD_LEFT) ?></code></td>
+                  <td><span class="sold-count">x<?= htmlspecialchars($product['total_qty']) ?></span></td>
                 </tr>
+                <?php endforeach; ?>
+                <?php if (empty($bestSellers)): ?>
                 <tr>
-                  <td>
-                    <div class="prod-info">
-                      <div class="prod-img-wrapper">
-                        <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=80&h=80&fit=crop" alt="Choco Cupcake" loading="lazy" />
-                      </div>
-                      <span>Choco Cupcake</span>
-                    </div>
-                  </td>
-                  <td><code class="sku-code">CC-089</code></td>
-                  <td><span class="sold-count">x145</span></td>
+                  <td colspan="3" style="text-align: center; padding: 1rem;">Belum ada data produk terlaris.</td>
                 </tr>
+                <?php endif; ?>
               </tbody>
             </table>
           </div>
@@ -146,4 +206,7 @@ $pageHeading  = 'Dashboard';
       </main>
     </div>
 
+<script>
+  window.dashboardData = <?= json_encode($dashboardData) ?>;
+</script>
 <?php include 'includes/footer.php'; ?>

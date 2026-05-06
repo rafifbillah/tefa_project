@@ -296,10 +296,11 @@
     config.chart.instances.lineChart = new Chart(ctx, {
       type: "line",
       data: {
-        labels: ["Jun", "Jul", "Aug", "Sep", "Oct"],
+        labels: window.dashboardData && window.dashboardData.salesChart ? window.dashboardData.salesChart.labels : ["Jun", "Jul", "Aug", "Sep", "Oct"],
         datasets: [
           {
-            data: [2100, 2400, 2300, 2982, 2800],
+            label: "Pendapatan",
+            data: window.dashboardData && window.dashboardData.salesChart ? window.dashboardData.salesChart.data : [2100, 2400, 2300, 2982, 2800],
             borderColor: config.chart.colors.primary,
             backgroundColor: gradient,
             fill: true,
@@ -374,13 +375,16 @@
     config.chart.instances.pieChart = new Chart(ctx, {
       type: "doughnut",
       data: {
-        labels: ["Tunai", "Transfer"],
+        labels: window.dashboardData && window.dashboardData.paymentMethods ? window.dashboardData.paymentMethods.labels : ["Tunai", "Transfer", "QRIS"],
         datasets: [
           {
-            data: [75, 25],
+            data: window.dashboardData && window.dashboardData.paymentMethods ? window.dashboardData.paymentMethods.data : [75, 25, 0],
             backgroundColor: [
               config.chart.colors.primary,
               config.chart.colors.secondary,
+              config.chart.colors.success,
+              "#9b59b6",
+              "#f1c40f"
             ],
             borderWidth: 0,
             hoverOffset: 8,

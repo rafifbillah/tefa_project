@@ -29,7 +29,7 @@ class Auth
     // ─── KONFIGURASI REDIRECT PER ROLE ───────────────────────────────────────
     private const ROLE_REDIRECTS = [
         'admin'  => 'admin/index.php',
-        'kasir'  => 'kasir/dashboard.php',
+        'kasir'  => 'kasir/index.php',
         'gudang' => 'gudang/index.php',
     ];
 
@@ -104,7 +104,7 @@ class Auth
         }
 
         // ─── Step 5: Cek status user ──────────────────────────────────────
-        if ($user['status'] !== 'active') {
+        if ($user['status'] !== 'aktif') {
             Flash::set('error', 'Akun Anda tidak aktif. Hubungi administrator.');
             return false;
         }
@@ -128,6 +128,13 @@ class Auth
         // Reset rate limit setelah login berhasil
         self::clearRateLimit($username);
 
+        // ─── AUTO-OPEN SHIFT UNTUK KASIR (SIMPLE MODE) ─────────────────────
+        if ($_SESSION['role'] === 'kasir') {
+            require_once __DIR__ . '/ShiftManager.php';
+            $shiftManager = new ShiftManager();
+            $shiftManager->startShift($_SESSION['user_id'], 0);
+        }
+
         return true;
     }
 
@@ -142,6 +149,16 @@ class Auth
      */
     public static function logout(): void
     {
+        // ─── AUTO-CLOSE SHIFT UNTUK KASIR (SIMPLE MODE) ─────────────────────
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'kasir' && isset($_SESSION['user_id'])) {
+            require_once __DIR__ . '/ShiftManager.php';
+            $shiftManager = new ShiftManager();
+            $activeShift = $shiftManager->getActiveShift($_SESSION['user_id']);
+            if ($activeShift) {
+                $shiftManager->endShift((int)$activeShift['id'], 0, 'Auto-closed via logout');
+            }
+        }
+
         // Hapus semua variabel session
         $_SESSION = [];
 
@@ -171,10 +188,28 @@ class Auth
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * Cek apakah user sedang login.
+     * Middleware: Wajibkan user login dengan role tertentu.
+     * Letakkan di paling atas file dashboard.
      *
-     * @return bool
+     * @param string $role Role yang diizinkan (admin/kasir/gudang)
      */
+    public static function requireRole(string $role): void
+    {
+        if (!self::isLoggedIn()) {
+            Flash::set('error', 'Silakan login terlebih dahulu.');
+            header('Location: ../login.php');
+            exit;
+        }
+
+        if (self::getRole() !== $role) {
+            // Aksi Ilegal: Coba akses folder role lain
+            $dashboard = self::getDashboardUrl(self::getRole());
+            Flash::set('error', 'Akses ditolak! Anda tidak memiliki izin untuk membuka halaman tersebut.');
+            header('Location: ../' . $dashboard);
+            exit;
+        }
+    }
+
     public static function isLoggedIn(): bool
     {
         if (empty($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {

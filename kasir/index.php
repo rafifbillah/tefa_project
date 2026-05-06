@@ -1,4 +1,7 @@
 <?php
+require_once '../core/Auth.php';
+Auth::requireRole('kasir');
+
 /**
  * Dashboard Kasir — TEFA Bakery & Coffee
  */
@@ -205,5 +208,4 @@ include 'includes/header.php';
         }
     });
 </script>
-
 <?php include 'includes/footer.php'; ?>

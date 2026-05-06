@@ -1,3 +1,9 @@
+<?php
+$currentUser = Auth::user();
+$namaLengkap = htmlspecialchars($currentUser['nama_lengkap'] ?? 'Kasir');
+$roleLabel   = ucfirst($currentUser['role'] ?? 'kasir');
+$initial     = strtoupper(substr($namaLengkap, 0, 1));
+?>
 <header class="main-header mb-8">
     <div class="header-left">
         <h1 class="page-title"><?= isset($page_title) ? $page_title : 'Dashboard' ?></h1>
@@ -10,11 +16,11 @@
         </div>
         <div class="user-profile">
             <div class="user-info">
-                <div class="user-role">Kasir</div>
-                <div class="user-name">Kasir TEFA</div>
+                <div class="user-role"><?= $roleLabel ?></div>
+                <div class="user-name"><?= $namaLengkap ?></div>
             </div>
             <div class="user-avatar-container">
-                <div class="user-avatar" style="background-color: var(--orange);">K</div>
+                <div class="user-avatar" style="background-color: var(--orange);"><?= $initial ?></div>
                 <span class="online-indicator"></span>
             </div>
         </div>

@@ -39,7 +39,7 @@ $current_page = strtolower(basename($_SERVER['PHP_SELF']));
     </nav>
     
     <div class="sidebar-bottom">
-        <a href="#" onclick="alert('Fungsi Logout akan diarahkan ke halaman Login nanti!')" class="logout-btn">
+        <a href="../logout.php" class="logout-btn">
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
             <span>Logout</span>
         </a>

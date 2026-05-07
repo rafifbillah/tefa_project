@@ -11,6 +11,7 @@ header('Content-Type: application/json');
 require_once '../core/Auth.php';
 require_once '../core/Database.php';
 require_once '../core/ShiftManager.php';
+Auth::requireRole('kasir');
 
 
 /**
@@ -225,8 +226,18 @@ if (!$payload) {
 }
 
 try {
+    $csrfToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (!Auth::verifyCsrfToken($csrfToken)) {
+        echo json_encode(['success' => false, 'message' => 'Request tidak valid (CSRF).']);
+        exit;
+    }
+
     $db     = Database::getConnection();
-    $userId = (int) ($_SESSION['user_id'] ?? 1);
+    $userId = (int) ($_SESSION['user_id'] ?? 0);
+    if ($userId <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Sesi login tidak valid.']);
+        exit;
+    }
 
     $transaction = new Transaction($db, $userId);
     $result      = $transaction->process($payload);

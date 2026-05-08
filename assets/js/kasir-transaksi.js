@@ -306,8 +306,9 @@ document
       }
 
       if (result.success) {
-        // Redirect ke struk di tab yang sama (tidak buka window baru)
-        window.location.href = `cetak_struk.php?id=${result.transaction_id}`;
+        // Buka struk di tab baru, lalu reset halaman kasir agar siap untuk antrean berikutnya
+        window.open(`cetak_struk.php?id=${result.transaction_id}`, '_blank');
+        window.location.reload();
       } else {
         throw new Error(result.message || "Transaksi gagal.");
       }

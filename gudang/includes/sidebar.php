@@ -33,7 +33,7 @@
     </nav>
     
     <div class="sidebar-bottom">
-        <a href="logout.php" class="logout-btn">
+        <a href="../logout.php" class="logout-btn">
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
             <span>Logout</span>
         </a>

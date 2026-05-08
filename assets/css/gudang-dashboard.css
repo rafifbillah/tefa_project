@@ -20,8 +20,9 @@
 }
 
 .graph-container {
-    height: 300px;
+    height: 320px; /* Tingkatkan sedikit tinggi agar label punya ruang */
     position: relative;
+    padding-bottom: 30px; /* Ruang untuk label bulan */
 }
 
 /* Simulasi Bar Chart */
@@ -37,7 +38,7 @@
     color: var(--text-muted);
     font-size: 0.85rem;
     text-align: right;
-    padding-bottom: 0px;
+    padding-bottom: 30px; /* Samakan dengan padding container untuk perataan */
     padding-right: 15px;
 }
 
@@ -71,11 +72,12 @@
 
 .bar .label {
     position: absolute;
-    bottom: -25px;
+    bottom: -30px; /* Beri jarak sedikit lebih banyak dari garis bawah */
     left: 50%;
     transform: translateX(-50%);
-    font-size: 0.85rem;
-    color: var(--text-dark);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
 }
 
 /* Simulasi Donut Chart */

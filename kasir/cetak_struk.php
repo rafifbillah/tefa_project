@@ -11,9 +11,9 @@ try {
     $stmtTrx = $db->prepare(
         "SELECT t.*, u.nama_lengkap AS nama_kasir, u.username
          FROM transactions t JOIN users u ON t.user_id = u.id
-         WHERE t.id = ?"
+         WHERE t.id = ? AND t.user_id = ?"
     );
-    $stmtTrx->execute([$id]);
+    $stmtTrx->execute([$id, $_SESSION['user_id']]);
     $trx = $stmtTrx->fetch();
 
     if (!$trx) die('<p style="font-family:sans-serif;color:red;padding:20px;">Transaksi tidak ditemukan.</p>');
@@ -278,7 +278,7 @@ $mc = $metodeColors[$metode] ?? ['bg' => '#6b7280', 'text' => '#fff'];
         <a href="transaksi.php" class="btn-new">
             + Transaksi Baru
         </a>
-        <a href="riwayat.php" class="btn-history">
+        <a href="laporan.php" class="btn-history">
             📋 Riwayat
         </a>
     </div>
@@ -368,4 +368,14 @@ $mc = $metodeColors[$metode] ?? ['bg' => '#6b7280', 'text' => '#fff'];
     </div><!-- /.struk-card -->
 
 </body>
+<script>
+    // Auto-Print saat halaman dimuat
+    window.onload = function() {
+        window.print();
+    }
+    // Auto-Close tab setelah print selesai atau dibatalkan
+    window.onafterprint = function() {
+        window.close();
+    }
+</script>
 </html>

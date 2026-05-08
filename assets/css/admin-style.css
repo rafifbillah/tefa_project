@@ -84,8 +84,7 @@ body {
    ======================================== */
 .left-panel {
   flex: 1;
-  background: url("https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1000")
-    no-repeat center center/cover;
+  background: url("../../assets/img/tefaroti.jpg") no-repeat center center/cover;
   position: relative;
   display: flex;
   align-items: flex-end;

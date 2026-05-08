@@ -174,7 +174,7 @@ include 'includes/header.php';
 
         <div class="table-footer">
             <button class="add-btn" id="openAddModalBtn"><i class="fa-solid fa-plus"></i> Update Stok</button>
-            <button class="print-btn" onclick="window.location.href='#'"><i class="fa-solid fa-file-lines"></i> Laporan Mutasi</button>
+            <button class="print-btn" onclick="window.location.href='laporan.php'"><i class="fa-solid fa-file-lines"></i> Laporan Mutasi</button>
             <div class="pagination">
                 <?php
                 $start_item = $offset + 1;

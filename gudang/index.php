@@ -1,6 +1,114 @@
 <?php
 require_once '../core/Auth.php';
 Auth::requireRole('gudang');
+
+require_once '../models/BarangModel.php';
+require_once '../models/InventoryLogModel.php';
+require_once '../core/Database.php';
+
+$barangModel = new BarangModel();
+$inventoryModel = new InventoryLogModel();
+$db = Database::getConnection();
+
+// 1. Ambil Semua Produk
+$allProducts = $barangModel->getAll();
+
+$totalProducts = count($allProducts);
+$totalStock = 0;
+$expiredSoon = 0;
+$lowStockProducts = [];
+
+$today = new DateTime();
+$today->setTime(0, 0, 0);
+$sevenDaysLater = (clone $today)->modify('+7 days');
+
+foreach ($allProducts as $p) {
+    $totalStock += $p['stok'];
+    
+    // Stok menipis
+    if ($p['stok'] < 10) {
+        $lowStockProducts[] = $p;
+    }
+    
+    // Expired soon
+    if (!empty($p['exp_date'])) {
+        $expDate = new DateTime($p['exp_date']);
+        $expDate->setTime(0, 0, 0);
+        if ($expDate >= $today && $expDate <= $sevenDaysLater) {
+            $expiredSoon++;
+        }
+    }
+}
+$lowStockCount = count($lowStockProducts);
+
+// 2. Aktivitas Terbaru (Log Mutasi)
+$recentActivities = $inventoryModel->getAll();
+$recentActivities = array_slice($recentActivities, 0, 5); // Limit 5
+
+// 3. Tren Stok Bulanan (Misalnya: volume barang masuk per bulan selama 6 bulan terakhir)
+$monthlyTrend = [];
+for ($i = 5; $i >= 0; $i--) {
+    $monthDate = date('Y-m', strtotime("-$i months"));
+    $monthLabel = date('M', strtotime("-$i months"));
+    
+    $stmt = $db->prepare("SELECT SUM(jumlah) FROM inventory_logs WHERE tipe_mutasi = 'masuk' AND DATE_FORMAT(created_at, '%Y-%m') = ?");
+    $stmt->execute([$monthDate]);
+    $masuk = (int)$stmt->fetchColumn();
+    
+    $monthlyTrend[] = [
+        'label' => $monthLabel,
+        'value' => $masuk
+    ];
+}
+
+$maxTrendValue = max(array_column($monthlyTrend, 'value'));
+if ($maxTrendValue == 0) $maxTrendValue = 1; // Mencegah division by zero
+
+// 4. Distribusi Kategori
+$categoryStats = [];
+$totalCategoryStock = 0;
+foreach ($allProducts as $p) {
+    $cat = !empty($p['nama_kategori']) ? $p['nama_kategori'] : 'Lainnya';
+    if (!isset($categoryStats[$cat])) {
+        $categoryStats[$cat] = 0;
+    }
+    $categoryStats[$cat] += $p['stok'];
+    $totalCategoryStock += $p['stok'];
+}
+
+$donutColors = ['var(--orange)', 'var(--orange-memek)', 'var(--grey-mid)', '#10B981', '#3B82F6', '#EF4444'];
+$donutGradientParts = [];
+$donutLegendHTML = '';
+$jsGradientMap = [];
+$currentPercent = 0;
+$colorIndex = 0;
+
+foreach ($categoryStats as $name => $stock) {
+    if ($totalCategoryStock > 0 && $stock > 0) {
+        $percentage = round(($stock / $totalCategoryStock) * 100);
+        // Pastikan persentase pas 100 di item terakhir jika mau sempurna, tapi round sudah cukup.
+        if ($percentage == 0) continue;
+        
+        $nextPercent = $currentPercent + $percentage;
+        $color = $donutColors[$colorIndex % count($donutColors)];
+        
+        $donutGradientParts[] = "$color $currentPercent% $nextPercent%";
+        $donutLegendHTML .= "<div class=\"legend-item\"><span class=\"dot\" style=\"background-color: $color;\"></span><span class=\"label\">" . htmlspecialchars($name) . "</span><span class=\"value\">$percentage%</span></div>";
+        
+        $jsGradientMap[] = [
+            'label' => $name,
+            'value' => "$percentage%",
+            'color' => $color,
+            'maxPct' => $nextPercent
+        ];
+        
+        $currentPercent = $nextPercent;
+        $colorIndex++;
+    }
+}
+$conicGradient = !empty($donutGradientParts) ? "conic-gradient(" . implode(", ", $donutGradientParts) . ")" : "conic-gradient(#eee 0% 100%)";
+
+
 /**
  * Dashboard Gudang — TEFA Bakery & Coffee
  */
@@ -15,25 +123,25 @@ include 'includes/header.php';
     <div class="summary-cards">
         <div class="card card-orange">
             <div class="card-title">Total Produk</div>
-            <div class="card-value">5</div>
+            <div class="card-value"><?= $totalProducts ?></div>
             <div class="card-subtitle">Barang terdaftar</div>
             <i class="fa-solid fa-box-open card-icon"></i>
         </div>
         <div class="card">
             <div class="card-title">Total Stok</div>
-            <div class="card-value">160</div>
-            <div class="card-subtitle success-text">+ 12% dari bulan lalu</div>
-            <i class="fa-solid fa-arrow-up card-icon success-text"></i>
+            <div class="card-value"><?= number_format($totalStock, 0, ',', '.') ?></div>
+            <div class="card-subtitle success-text">Sisa stok gudang</div>
+            <i class="fa-solid fa-boxes-stacked card-icon success-text"></i>
         </div>
         <div class="card card-pink">
             <div class="card-title">Expired Soon</div>
-            <div class="card-value">0</div>
+            <div class="card-value"><?= $expiredSoon ?></div>
             <div class="card-subtitle text-pink">Dalam 7 hari</div>
             <i class="fa-solid fa-warning card-icon text-pink"></i>
         </div>
         <div class="card card-orange-light">
             <div class="card-title">Stok Menipis</div>
-            <div class="card-value">2</div>
+            <div class="card-value"><?= $lowStockCount ?></div>
             <div class="card-subtitle text-orange">Perlu segera restok</div>
             <i class="fa-solid fa-arrow-trend-down card-icon text-orange"></i>
         </div>
@@ -41,22 +149,20 @@ include 'includes/header.php';
 
     <div class="graphs-row">
         <div class="graph-card">
-            <h3 class="graph-title">Tren Stok Bulanan</h3>
+            <h3 class="graph-title">Tren Stok Masuk Bulanan</h3>
             <div class="graph-container bar-chart">
                 <div class="chart-y-axis">
-                    <span>80</span>
-                    <span>60</span>
-                    <span>40</span>
-                    <span>20</span>
+                    <span><?= ceil($maxTrendValue) ?></span>
+                    <span><?= ceil($maxTrendValue * 0.75) ?></span>
+                    <span><?= ceil($maxTrendValue * 0.5) ?></span>
+                    <span><?= ceil($maxTrendValue * 0.25) ?></span>
                     <span>0</span>
                 </div>
                 <div class="chart-bars">
-                    <div class="bar" style="height: 50%" data-value="40"><span class="label">Jan</span></div>
-                    <div class="bar" style="height: 55%" data-value="44"><span class="label">Feb</span></div>
-                    <div class="bar" style="height: 48%" data-value="38"><span class="label">Mar</span></div>
-                    <div class="bar" style="height: 65%" data-value="52"><span class="label">Apr</span></div>
-                    <div class="bar" style="height: 52%" data-value="42"><span class="label">May</span></div>
-                    <div class="bar" style="height: 72%" data-value="58"><span class="label">Jun</span></div>
+                    <?php foreach ($monthlyTrend as $trend): ?>
+                        <?php $heightPct = min(100, round(($trend['value'] / $maxTrendValue) * 100)); ?>
+                        <div class="bar" style="height: <?= $heightPct ?>%" data-value="<?= $trend['value'] ?>"><span class="label"><?= $trend['label'] ?></span></div>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
@@ -64,13 +170,11 @@ include 'includes/header.php';
         <div class="graph-card">
             <h3 class="graph-title">Distribusi Kategori</h3>
             <div class="graph-container donut-chart">
-                <div class="donut-display" style="background: conic-gradient(var(--orange) 0% 45%, var(--orange-memek) 45% 75%, var(--grey-mid) 75% 100%);">
+                <div class="donut-display" style="background: <?= $conicGradient ?>;">
                     <div class="donut-center"></div>
                 </div>
                 <div class="donut-legend">
-                    <div class="legend-item"><span class="dot" style="background-color: var(--orange);"></span><span class="label">Kopi</span><span class="value">45%</span></div>
-                    <div class="legend-item"><span class="dot" style="background-color: var(--orange-memek);"></span><span class="label">Roti</span><span class="value">30%</span></div>
-                    <div class="legend-item"><span class="dot" style="background-color: var(--grey-mid);"></span><span class="label">Kue</span><span class="value">25%</span></div>
+                    <?= $donutLegendHTML ?: '<div class="legend-item"><span class="label">Belum Ada Data</span></div>' ?>
                 </div>
             </div>
         </div>
@@ -80,10 +184,32 @@ include 'includes/header.php';
         <div class="list-card">
             <h3 class="list-title">Aktivitas Terbaru</h3>
             <ul class="activity-list">
-                <li class="activity-item"><span class="activity-marker green"></span> Biji Kopi Espresso. Ditambahkan. <span class="time">2 jam yang lalu</span></li>
-                <li class="activity-item"><span class="activity-marker orange"></span> Roti Tawar. Stok Menipis. <span class="time">5 jam yang lalu</span></li>
-                <li class="activity-item"><span class="activity-marker blue"></span> Croissant. Diperbarui. <span class="time">1 hari yang lalu</span></li>
-                <li class="activity-item"><span class="activity-marker red"></span> Bubuk Kopi. Hampir Habis. <span class="time">2 hari yang lalu</span></li>
+                <?php if (empty($recentActivities)): ?>
+                    <li class="activity-item"><span class="activity-marker grey"></span> Belum ada aktivitas mutasi.</li>
+                <?php else: ?>
+                    <?php foreach ($recentActivities as $act): ?>
+                        <?php 
+                        $markerClass = 'grey';
+                        $actionText = 'Disesuaikan';
+                        if ($act['tipe_mutasi'] == 'masuk') { $markerClass = 'green'; $actionText = 'Ditambahkan'; }
+                        elseif ($act['tipe_mutasi'] == 'keluar') { $markerClass = 'orange'; $actionText = 'Dikeluarkan'; }
+                        elseif ($act['tipe_mutasi'] == 'rusak') { $markerClass = 'red'; $actionText = 'Dilaporkan rusak'; }
+                        elseif ($act['tipe_mutasi'] == 'retur') { $markerClass = 'blue'; $actionText = 'Diretur'; }
+                        
+                        $timeAgo = strtotime($act['created_at']);
+                        $diff = time() - $timeAgo;
+                        if ($diff < 60) $timeStr = "Baru saja";
+                        elseif ($diff < 3600) $timeStr = floor($diff/60) . " menit lalu";
+                        elseif ($diff < 86400) $timeStr = floor($diff/3600) . " jam lalu";
+                        else $timeStr = floor($diff/86400) . " hari lalu";
+                        ?>
+                        <li class="activity-item">
+                            <span class="activity-marker <?= $markerClass ?>"></span> 
+                            <strong><?= htmlspecialchars($act['nama_produk']) ?></strong>. <?= $actionText ?> (<?= $act['jumlah'] ?> unit). 
+                            <span class="time"><?= $timeStr ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </ul>
         </div>
 
@@ -92,30 +218,18 @@ include 'includes/header.php';
             <div class="warning-table">
                 <table>
                     <tbody>
-                        <tr>
-                            <td>Roti Tawar</td>
-                            <td class="category">Kategori: Roti</td>
-                            <td class="stock-warning">5 unit</td>
-                            <td class="min-stock">Min: 20</td>
-                        </tr>
-                        <tr>
-                            <td>Roti Gembong</td>
-                            <td class="category">Kategori: Roti</td>
-                            <td class="stock-warning">10 unit</td>
-                            <td class="min-stock">Min: 15</td>
-                        </tr>
-                        <tr>
-                            <td>Croissant</td>
-                            <td class="category">Kategori: Kue</td>
-                            <td class="stock-warning">12 unit</td>
-                            <td class="min-stock">Min: 20</td>
-                        </tr>
-                        <tr>
-                            <td>Donat</td>
-                            <td class="category">Kategori: Kue</td>
-                            <td class="stock-warning">8 unit</td>
-                            <td class="min-stock">Min: 15</td>
-                        </tr>
+                        <?php if (empty($lowStockProducts)): ?>
+                            <tr><td colspan="4" style="text-align: center; color: #888; padding: 20px;">Semua stok aman.</td></tr>
+                        <?php else: ?>
+                            <?php foreach ($lowStockProducts as $lp): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($lp['nama_produk']) ?></td>
+                                <td class="category">Kategori: <?= htmlspecialchars($lp['nama_kategori'] ?? 'Lainnya') ?></td>
+                                <td class="stock-warning"><?= $lp['stok'] ?> unit</td>
+                                <td class="min-stock">Min: 10</td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -157,6 +271,8 @@ include 'includes/header.php';
     </style>
 
     <script>
+        window.donutMap = <?= json_encode($jsGradientMap) ?>;
+
         document.addEventListener('DOMContentLoaded', () => {
             const bars = document.querySelectorAll('.chart-bars .bar');
             
@@ -189,7 +305,7 @@ include 'includes/header.php';
                 bar.addEventListener('mouseenter', (e) => {
                     const value = bar.getAttribute('data-value') || '';
                     const label = bar.querySelector('.label').textContent || '';
-                    tooltip.innerHTML = `<span style="color: #ffd166;">Bulan: ${label}</span><br/>Stok: ${value}`;
+                    tooltip.innerHTML = `<span style="color: #ffd166;">Bulan: ${label}</span><br/>Barang Masuk: ${value} unit`;
                     tooltip.style.opacity = '1';
                 });
 
@@ -213,7 +329,7 @@ include 'includes/header.php';
 
             // Tooltip untuk Distribusi Kategori (Donut Chart)
             const donutDisplay = document.querySelector('.donut-display');
-            if (donutDisplay) {
+            if (donutDisplay && window.donutMap && window.donutMap.length > 0) {
                 donutDisplay.addEventListener('mousemove', (e) => {
                     const rect = donutDisplay.getBoundingClientRect();
                     const centerX = rect.left + rect.width / 2;
@@ -225,7 +341,6 @@ include 'includes/header.php';
                     const distance = Math.sqrt(x*x + y*y);
                     const radius = rect.width / 2;
                     
-                    // Jika kursor berada terlalu dekat dengan tengah (area lubang donut), sembunyikan tooltip
                     if (distance < radius * 0.4) {
                         tooltip.style.opacity = '0';
                         return;
@@ -238,20 +353,17 @@ include 'includes/header.php';
                     
                     const pct = (angle / 360) * 100;
 
-                    let label = '';
-                    let value = '';
-                    let color = '';
+                    let label = 'Lainnya';
+                    let value = '0%';
+                    let color = '#ccc';
 
-                        // Layout gradien berdasarkan style css:
-                    // 0% - 45% Kopi (var(--orange))
-                    // 45% - 75% Roti (var(--orange-mid))
-                    // 75% - 100% Kue  (var(--grey-mid))
-                    if (pct <= 45) {
-                        label = 'Kopi'; value = '45%'; color = 'var(--orange)';
-                    } else if (pct <= 75) {
-                        label = 'Roti'; value = '30%'; color = 'var(--orange-mid)';
-                    } else {
-                        label = 'Kue'; value = '25%'; color = 'var(--grey-mid)';
+                    for (let i = 0; i < window.donutMap.length; i++) {
+                        if (pct <= window.donutMap[i].maxPct) {
+                            label = window.donutMap[i].label;
+                            value = window.donutMap[i].value;
+                            color = window.donutMap[i].color;
+                            break;
+                        }
                     }
 
                     tooltip.innerHTML = `<span style="font-size: 1.1em; color: ${color};">&#9679;</span> <span style="color: #fff;">${label}</span><br/><span style="color: #bbb; font-weight: normal; font-size:0.8rem;">Persentase:</span> ${value}`;

@@ -98,9 +98,6 @@ include 'includes/header.php';
                 <h4>Log Mutasi Stok (<?= count($logs) ?>)</h4>
             </div>
             <div class="table-actions">
-                <button onclick="window.print()" class="btn-action-premium print">
-                    <i class="fas fa-print"></i> Print / PDF
-                </button>
                 <a href="export_excel.php?<?= http_build_query($_GET) ?>" class="btn-action-premium excel" style="text-decoration:none;">
                     <i class="fas fa-file-excel"></i> Excel
                 </a>

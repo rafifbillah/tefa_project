@@ -10,12 +10,20 @@ $laporanModel = new LaporanModel();
 $method = isset($_GET['method']) ? strtolower($_GET['method']) : 'semua';
 $methodFilter = ($method === 'semua') ? null : $method;
 
-// Filter Tanggal - Default tampilkan SEMUA jika tidak dipilih agar data selalu terlihat
-$selectedDate = isset($_GET['date']) && $_GET['date'] !== '' ? $_GET['date'] : null;
+// Filter Tanggal - Default tampilkan HARI INI
+$dateParam = $_GET['date'] ?? null;
+if ($dateParam === 'all') {
+    $selectedDate = null;
+} elseif ($dateParam !== null && $dateParam !== '') {
+    $selectedDate = $dateParam;
+} else {
+    $selectedDate = date('Y-m-d');
+}
 
 // Eksekusi query model
-$transactions = $laporanModel->getTransactions($selectedDate, $selectedDate, $methodFilter);
-$stats = $laporanModel->getSummaryStats($selectedDate, $selectedDate, $methodFilter);
+$userId = $_SESSION['user_id'];
+$transactions = $laporanModel->getTransactions($selectedDate, $selectedDate, $methodFilter, $userId);
+$stats = $laporanModel->getSummaryStats($selectedDate, $selectedDate, $methodFilter, $userId);
 
 $totalTransaksi = count($transactions);
 $totalPendapatan = $stats['total_pendapatan'] ?? 0;
@@ -57,7 +65,7 @@ include 'includes/header.php';
     }
 
     @media print {
-        aside, header.main-header, .no-print, #print-btn, .filter-container {
+        aside, header.main-header, .no-print, #print-btn, .filter-container, .export-btns, button, .bg-blue-600, .bg-[#e8f5e9] {
             display: none !important;
         }
         main {
@@ -73,12 +81,26 @@ include 'includes/header.php';
         .glass-card {
             border: 1px solid #e2e8f0 !important;
             box-shadow: none !important;
+            background: white !important;
+            backdrop-filter: none !important;
+        }
+        .print-only {
+            display: block !important;
+        }
+        table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+        }
+        th, td {
+            border: 1px solid #e2e8f0 !important;
+            font-size: 10px !important;
         }
         * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
     }
+
 
     /* Modal Styling */
     .modal-overlay {
@@ -105,12 +127,16 @@ include 'includes/header.php';
 
     <div class="max-w-7xl mx-auto px-6 py-8">
 
+
         <!-- Filter & Action Bar -->
         <div class="glass-card rounded-3xl p-6 mb-8 no-print flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 filter-container">
             <form method="GET" class="flex flex-wrap items-center gap-6">
                 <div class="flex flex-col gap-1.5">
                     <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Pilih Tanggal</label>
-                    <input type="date" name="date" value="<?= $selectedDate ?? '' ?>" onchange="this.form.submit()" class="bg-gray-50 border-none text-gray-700 py-3 px-6 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-[#D97706] hover:bg-gray-100 transition-all cursor-pointer">
+                    <div class="flex items-center gap-2">
+                        <input type="date" name="date" value="<?= $selectedDate ?? '' ?>" onchange="this.form.submit()" class="bg-gray-50 border-none text-gray-700 py-3 px-6 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-[#D97706] hover:bg-gray-100 transition-all cursor-pointer">
+                        <button type="button" onclick="window.location.href='laporan.php?date=all'" class="bg-gray-50 text-gray-600 px-5 py-3 rounded-2xl font-bold text-sm hover:bg-gray-200 transition-all cursor-pointer" title="Tampilkan Semua Transaksi">Semua</button>
+                    </div>
                 </div>
 
                 <div class="flex flex-col gap-1.5">
@@ -126,7 +152,7 @@ include 'includes/header.php';
                     </div>
                 </div>
 
-                <?php if ($selectedDate !== null || $method !== 'semua'): ?>
+                <?php if ($selectedDate !== date('Y-m-d') || $method !== 'semua'): ?>
                 <div class="flex items-end h-full pt-6">
                     <a href="laporan.php" class="text-xs font-bold text-[#D97706] hover:underline">Reset Filter</a>
                 </div>
@@ -134,12 +160,25 @@ include 'includes/header.php';
             </form>
 
             <div class="flex items-center gap-3">
+                <!-- Tombol Tutup Shift -->
+                <?php 
+                    $actionDate = $selectedDate ?: date('Y-m-d');
+                    $hasPending = false;
+                    foreach ($transactions as $t) {
+                        if (($t['status_verifikasi'] ?? 'pending') === 'pending') {
+                            $hasPending = true; break;
+                        }
+                    }
+                ?>
+                <?php if ($hasPending && $selectedDate !== null): ?>
+                <button onclick="ajukanRekapHarian('<?= $actionDate ?>')" class="bg-blue-600 text-white px-6 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 hover:bg-blue-700 transition-all duration-300 shadow-lg shadow-blue-500/20 active:scale-95">
+                    <i class="fa-solid fa-paper-plane"></i> TUTUP SHIFT & AJUKAN
+                </button>
+                <?php endif; ?>
+
                 <a href="export_excel.php?<?= http_build_query($_GET) ?>" class="bg-[#e8f5e9] text-[#2e7d32] px-6 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 hover:bg-[#c8e6c9] transition-all duration-300 shadow-sm active:scale-95">
                     <i class="fa-solid fa-file-excel"></i> EXCEL
                 </a>
-                <button onclick="window.print()" class="bg-[#2D1A11] text-white px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 hover:bg-[#D97706] transition-all duration-300 shadow-lg shadow-black/10 hover:shadow-orange-500/20 active:scale-95">
-                    <i class="fa-solid fa-print"></i> CETAK / PDF
-                </button>
             </div>
         </div>
 
@@ -220,10 +259,22 @@ include 'includes/header.php';
                                         <span class="text-[10px] text-gray-400 font-bold uppercase"><?= $date ?></span>
                                     </div>
                                 </td>
-                                <td class="py-6 px-8">
+                                <td class="py-6 px-8 flex flex-col gap-2 items-start">
                                     <span class="font-mono text-sm font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg">
                                         <?= htmlspecialchars($trx['transaction_id']) ?>
                                     </span>
+                                    <?php 
+                                        $statusV = $trx['status_verifikasi'] ?? 'pending';
+                                        if ($statusV === 'pending') {
+                                            echo '<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-gray-100 text-gray-500 border border-gray-200">Pending</span>';
+                                        } elseif ($statusV === 'requested') {
+                                            echo '<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-blue-50 text-blue-600 border border-blue-200">Menunggu</span>';
+                                        } elseif ($statusV === 'verified') {
+                                            echo '<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-200">Verified</span>';
+                                        } elseif ($statusV === 'synced') {
+                                            echo '<span class="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-purple-50 text-purple-600 border border-purple-200"><i class="fa-solid fa-cloud-check"></i> Terkirim</span>';
+                                        }
+                                    ?>
                                 </td>
                                 <td class="py-6 px-8">
                                     <div class="flex flex-col gap-1.5">
@@ -365,10 +416,37 @@ function closeDetailModal() {
     document.getElementById('detailModal').style.display = 'none';
 }
 
+const csrfToken = "<?= Auth::generateCsrfToken() ?>";
+
 // Tutup modal dengan tombol Escape
 document.addEventListener('keydown', function(event) {
     if (event.key === "Escape") closeDetailModal();
 });
+
+async function ajukanRekapHarian(tanggal) {
+    if (!confirm('Apakah Anda yakin ingin menutup shift dan mengajukan seluruh transaksi hari ini ke Admin?')) return;
+    
+    try {
+        const res = await fetch('ajax_ajukan_verifikasi.php', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+            },
+            body: JSON.stringify({ tanggal: tanggal })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    } catch (e) {
+        alert('Terjadi kesalahan koneksi.');
+    }
+}
+
 </script>
 
 <?php include 'includes/footer.php'; ?>

@@ -226,6 +226,47 @@
   text-align: right;
 }
 
+@media print {
+  aside, .sidebar, .header-admin, .filter-card, .btn-primary, .btn-reset, .btn-action, button, .no-print, .export-btns, .card-header-flex .btn-export {
+    display: none !important;
+  }
+  .report-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 20px !important;
+  }
+  .card-stat {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    padding: 10px !important;
+  }
+  .table-card-report, .best-seller-card {
+    box-shadow: none !important;
+    border: 1px solid #eee !important;
+    margin-bottom: 20px !important;
+  }
+  .report-table th {
+    background: #f3f4f6 !important;
+    color: black !important;
+    border: 1px solid #ddd !important;
+  }
+  .report-table td {
+    border: 1px solid #eee !important;
+    font-size: 9px !important;
+  }
+  .report-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .stats-grid {

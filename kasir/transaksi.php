@@ -204,5 +204,5 @@ include 'includes/header.php';
     </div>
 </main>
 
-<script src="../assets/js/kasir-transaksi.js"></script>
+<script src="../assets/js/kasir-transaksi.js?v=<?= time() ?>"></script>
 <?php include 'includes/footer.php'; ?>

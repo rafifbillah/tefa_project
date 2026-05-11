@@ -317,7 +317,7 @@ include 'includes/header.php';
                                             <i class="fa-solid fa-eye text-sm"></i>
                                         </button>
                                         <!-- Tombol Cetak Ulang -->
-                                        <a href="cetak_struk.php?id=<?= $trx['id'] ?>" target="_blank" class="w-9 h-9 rounded-xl bg-[#2D1A11]/10 text-[#2D1A11] hover:bg-[#2D1A11] hover:text-white flex items-center justify-center transition-colors shadow-sm" title="Cetak Ulang Struk">
+                                        <a href="cetak_struk.php?id=<?= $trx['id'] ?>" class="w-9 h-9 rounded-xl bg-[#2D1A11]/10 text-[#2D1A11] hover:bg-[#2D1A11] hover:text-white flex items-center justify-center transition-colors shadow-sm" title="Cetak Ulang Struk">
                                             <i class="fa-solid fa-print text-sm"></i>
                                         </a>
                                     </div>

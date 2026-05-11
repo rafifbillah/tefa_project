@@ -368,14 +368,10 @@ $mc = $metodeColors[$metode] ?? ['bg' => '#6b7280', 'text' => '#fff'];
     </div><!-- /.struk-card -->
 
 </body>
+<!-- Script Auto-Print dihapus agar user bisa melihat halaman terlebih dahulu -->
 <script>
-    // Auto-Print saat halaman dimuat
-    window.onload = function() {
-        window.print();
-    }
-    // Auto-Close tab setelah print selesai atau dibatalkan
-    window.onafterprint = function() {
-        window.close();
-    }
+    // Hanya menyimpan fungsi manual jika diperlukan di masa depan
+    // Saat ini pencetakan dilakukan melalui tombol "Cetak Struk" di atas
 </script>
+
 </html>

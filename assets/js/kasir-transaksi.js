@@ -9,6 +9,7 @@
 let cart = []; // Array item di keranjang
 let paymentMethod = "tunai"; // Metode bayar aktif
 let currentCategory = "semua"; // Kategori filter aktif
+const csrfToken = window.KASIR_CSRF_TOKEN || "";
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -290,7 +291,10 @@ document
     try {
       const response = await fetch("process_transaction.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
         body: JSON.stringify(payload),
       });
 

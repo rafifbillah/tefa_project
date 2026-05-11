@@ -6,6 +6,7 @@ require_once '../models/BarangModel.php';
 
 $barangModel = new BarangModel();
 $productsFromDB = $barangModel->getAll();
+$csrfToken = Auth::generateCsrfToken();
 
 $page_title = "Transaksi";
 $page_subtitle = "RINGKASAN AKTIVITAS TOKO";
@@ -205,4 +206,7 @@ include 'includes/header.php';
 </main>
 
 <script src="../assets/js/kasir-transaksi.js"></script>
+<script>
+    window.KASIR_CSRF_TOKEN = <?= json_encode($csrfToken, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+</script>
 <?php include 'includes/footer.php'; ?>

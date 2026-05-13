@@ -44,7 +44,7 @@ $basePath = 'admin/';
       <div class="right-panel" role="main">
         <div class="login-box">
           <div class="logo">
-             <img src="assets/img/logo.jpg" alt="Logo">
+            <img src="assets/img/logo.jpg" alt="Logo">
             <span>TEFA Bakery and Coffee</span>
           </div>
 
@@ -107,17 +107,6 @@ $basePath = 'admin/';
                 </button>
               </div>
               <span id="passwordHelp" class="input-help">Min. 4 karakter</span>
-            </div>
-
-
-            <!-- Remember Me & Forgot Password -->
-            <div class="form-extras">
-              <label class="remember-me">
-                <input type="checkbox" id="rememberMe" name="remember" />
-                <span class="checkmark"></span>
-                <span>Ingat saya</span>
-              </label>
-              <a href="#" class="forgot-password">Lupa password?</a>
             </div>
 
             <!-- Submit Button -->

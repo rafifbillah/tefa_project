@@ -225,8 +225,8 @@ include 'includes/header.php';
                     <div class="form-group" style="margin-bottom: 1.5rem;">
                         <label>Tanggal Kadaluarsa (Baru/Tetap)</label>
                         <input type="date" name="exp" id="modal_exp" required
-                               min="<?= date('Y-m-d') ?>"
-                               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                            min="<?= date('Y-m-d') ?>"
+                            style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
                     </div>
 
                     <div class="modal-footer">

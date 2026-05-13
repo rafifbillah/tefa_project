@@ -1,0 +1,70 @@
+/* Tombol Tambah Barang Baru */
+.table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    margin-top: 30px;
+    position: relative;
+    gap: 15px;
+}
+
+.add-btn {
+    background-color: var(--orange);
+    color: var(--white);
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.add-btn:hover { background-color: var(--orange-mid); }
+
+.print-btn {
+    background-color: var(--white);
+    color: var(--text-dark);
+    border: 1px solid var(--grey-mid);
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.print-btn:hover { background-color: var(--grey-light); }
+
+/* Paginasi */
+.pagination {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.pagination button {
+    background-color: #e2e8f0;
+    border: 1px solid var(--grey-light);
+    color: var(--text-dark);
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.pagination .page-num.active {
+    background-color: var(--orange);
+    color: var(--white);
+    border-color: var(--orange);
+}

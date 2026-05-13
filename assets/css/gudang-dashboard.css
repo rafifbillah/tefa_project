@@ -1,0 +1,199 @@
+/* --- Grafik --- */
+.graphs-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.graph-card, .list-card {
+    background-color: var(--white);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--grey-light);
+}
+
+.graph-title, .list-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.graph-container {
+    height: 320px; /* Tingkatkan sedikit tinggi agar label punya ruang */
+    position: relative;
+    padding-bottom: 30px; /* Ruang untuk label bulan */
+}
+
+/* Simulasi Bar Chart */
+.bar-chart {
+    display: flex;
+    gap: 20px;
+}
+
+.chart-y-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: right;
+    padding-bottom: 30px; /* Samakan dengan padding container untuk perataan */
+    padding-right: 15px;
+}
+
+.chart-y-axis span {
+    line-height: 0;
+}
+
+.chart-bars {
+    flex-grow: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-left: 1px solid var(--grey-mid);
+    border-bottom: 1px solid var(--grey-mid);
+    padding-bottom: 0px;
+    position: relative;
+    background-image: 
+        linear-gradient(to right, var(--white) 5px, transparent 5px),
+        linear-gradient(to bottom, var(--grey-light) 1px, transparent 1px);
+    background-size: 10px 100%, 100% 25%;
+}
+
+.bar {
+    flex: 1;
+    margin: 0 4%;
+    background-color: var(--orange);
+    border-radius: 6px 6px 0 0;
+    position: relative;
+    transition: height 0.5s ease-out;
+}
+
+.bar .label {
+    position: absolute;
+    bottom: -30px; /* Beri jarak sedikit lebih banyak dari garis bawah */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+/* Simulasi Donut Chart */
+.donut-chart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.donut-display {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    position: relative;
+}
+
+.donut-center {
+    width: 120px;
+    height: 120px;
+    background-color: var(--white);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.donut-legend {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+.donut-legend .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.donut-legend .value {
+    margin-left: auto;
+    font-weight: bold;
+}
+
+/* --- Baris Aktivitas & Peringatan --- */
+.lists-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.activity-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+}
+
+.activity-marker {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.activity-marker.green { background-color: var(--green); }
+.activity-marker.orange { background-color: var(--orange); }
+.activity-marker.blue { background-color: var(--blue); }
+.activity-marker.red { background-color: var(--red); }
+
+.activity-item .time {
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.warning-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.warning-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--grey-light);
+    font-size: 0.95rem;
+}
+
+.warning-table td.category {
+    color: var(--grey-mid);
+    font-size: 0.85rem;
+}
+
+.warning-table td.stock-warning {
+    color: var(--red);
+    font-weight: bold;
+    text-align: right;
+}
+
+.warning-table td.min-stock {
+    font-size: 0.85rem;
+    color: var(--grey-mid);
+    text-align: right;
+}

@@ -3,7 +3,7 @@ require_once __DIR__ . '/../core/Auth.php';
 require_once __DIR__ . '/../models/BarangModel.php';
 
 // Hanya izinkan akses jika sudah login
-if (!Auth::check()) {
+if (!Auth::isLoggedIn()) {
     header('Content-Type: application/json');
     echo json_encode(['error' => 'Unauthorized']);
     exit;

@@ -34,6 +34,11 @@ class Auth
         return AccessControl::isLoggedIn();
     }
 
+    public static function check(): bool
+    {
+        return self::isLoggedIn();
+    }
+
     public static function getRole(): ?string
     {
         return AccessControl::getRole();

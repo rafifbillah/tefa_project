@@ -5,6 +5,7 @@ Auth::requireRole('gudang');
 require_once __DIR__ . '/../models/BarangModel.php';
 require_once __DIR__ . '/../models/InventoryLogModel.php';
 require_once __DIR__ . '/../core/Flash.php';
+require_once __DIR__ . '/../core/Paginator.php';
 
 $barangModel = new BarangModel();
 $db = Database::getConnection();
@@ -19,9 +20,8 @@ if (isset($_POST['submit'])) {
     $tipe = $_POST['tipe_mutasi'];
     $ket = $_POST['keterangan'];
     $exp = $_POST['exp'];
-    
     $today = date('Y-m-d');
-    
+
     if ($jumlah <= 0) {
         Flash::set('error', 'Jumlah stok harus lebih dari 0.');
     } elseif (!empty($exp) && $exp < $today) {
@@ -261,17 +261,10 @@ include 'includes/header.php';
                     });
                 }
 
-                // Pagination
-                $limit = 5;
-                $total_items = count($inventoryData);
-                $total_pages = ceil($total_items / $limit);
-                $current_p = isset($_GET['p']) ? (int)$_GET['p'] : 1;
-                if ($current_p < 1) $current_p = 1;
-                if ($current_p > $total_pages && $total_pages > 0) $current_p = $total_pages;
-                $offset = ($current_p - 1) * $limit;
-                $items_to_display = array_slice($inventoryData, $offset, $limit);
+                // Setelah difilter, buat Paginator
+                $paginator = new Paginator($inventoryData, 5, 'p');
 
-                if (empty($items_to_display)):
+                if ($paginator->getTotalItems() == 0):
                 ?>
                     <tr>
                         <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">
@@ -282,7 +275,7 @@ include 'includes/header.php';
                 <?php
                 endif;
 
-                foreach ($items_to_display as $row):
+                foreach ($paginator->getItems() as $row):
                     $statusClass = '';
                     $statusLabel = 'OPTIMAL';
                     if ($row['stok_layak'] == 0) {
@@ -341,23 +334,7 @@ include 'includes/header.php';
         <div class="table-footer">
             <button class="add-btn" id="openAddModalBtn"><i class="fa-solid fa-plus"></i> Update Stok</button>
             <button class="print-btn" onclick="window.location.href='laporan.php'"><i class="fa-solid fa-file-lines"></i> Laporan Mutasi</button>
-            <div class="pagination">
-                <?php
-                $start_item = $offset + 1;
-                $end_item = min($offset + $limit, $total_items);
-                if ($total_items == 0) { $start_item = 0; $end_item = 0; }
-                
-                // Buat query string untuk pagination agar filter tidak hilang
-                $query_params = $_GET;
-                unset($query_params['p']); // hapus page parameter agar tidak bentrok
-                $queryString = http_build_query($query_params);
-                $queryString = $queryString ? '&' . $queryString : '';
-                ?>
-                <span class="pagination-info">Menampilkan <?= $start_item ?>-<?= $end_item ?> dari <?= $total_items ?> barang</span>
-                <button class="page-prev" <?= ($current_p > 1) ? 'onclick="window.location.href=\'barang.php?p='.($current_p - 1) . $queryString . '\'"' : 'style="opacity: 0.5; cursor: default;"'; ?>><i class="fa-solid fa-chevron-left"></i></button>
-                <button class="page-num active"><?= $current_p ?></button>
-                <button class="page-next" <?= ($current_p < $total_pages) ? 'onclick="window.location.href=\'barang.php?p='.($current_p + 1) . $queryString . '\'"' : 'style="opacity: 0.5; cursor: default;"'; ?>><i class="fa-solid fa-chevron-right"></i></button>
-            </div>
+            <?= $paginator->render('barang.php', 'barang') ?>
         </div>
     </div>
 
@@ -411,7 +388,9 @@ include 'includes/header.php';
 
                     <div class="form-group" style="margin-bottom: 1.5rem;">
                         <label>Tanggal Kadaluarsa (Baru/Tetap)</label>
-                        <input type="date" name="exp" id="modal_exp" required min="<?= date('Y-m-d') ?>" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+                        <input type="date" name="exp" id="modal_exp" required
+                            min="<?= date('Y-m-d') ?>"
+                            style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
                     </div>
 
                     <div class="modal-footer">
@@ -469,6 +448,7 @@ include 'includes/header.php';
         </div>
     </div>
 
+<<<<<<< HEAD
     <!-- Modal Lihat Detail Batch -->
     <div class="modal-overlay" id="batchesModal">
         <div class="modal-content" style="max-width: 650px;">
@@ -572,7 +552,6 @@ include 'includes/header.php';
         /* Fix Table Alignment */
         .inventory-table td { vertical-align: middle; }
     </style>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const addModal = document.getElementById('addModal');

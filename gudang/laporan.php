@@ -27,8 +27,9 @@ $pageTitle = 'Laporan Mutasi Stok';
 $page = 'laporan';
 include 'includes/header.php';
 ?>
+<link rel="stylesheet" href="../assets/css/gudang-laporan.css">
 
-<div class="mutation-report-container">
+<section class="laporan-page">
     <!-- ═══ STATS CARDS ═══ -->
     <section class="summary-cards">
         <div class="card">
@@ -164,149 +165,6 @@ include 'includes/header.php';
             </table>
         </div>
     </section>
-</div>
-
-<style>
-/* ─── PREMIUM CSS FOR MUTATION REPORT ─── */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
-:root {
-    --tefa-brown: #2b1b17;
-    --tefa-orange: #d4832c;
-    --tefa-cream: #f9f6f2;
-    --tefa-green: #27ae60;
-    --tefa-red: #e74c3c;
-    --tefa-gray: #7f8c8d;
-    --tefa-border: #e2d5c3;
-}
-
-.mutation-report-container {
-    padding: 5px;
-    min-height: 100vh;
-    font-family: 'Poppins', sans-serif;
-}
-
-/* Main Container */
-.mutation-report-container {
-    padding: 25px;
-    min-height: 100vh;
-    font-family: 'Poppins', sans-serif;
-}
-
-/* Filter Card */
-.filter-card-premium {
-    background: #fff;
-    padding: 25px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-}
-.filter-form-premium {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    align-items: flex-end;
-}
-.form-group-premium {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex: 1;
-    min-width: 180px;
-}
-.form-group-premium.search-group { flex: 2; }
-.form-group-premium label { font-size: 13px; font-weight: 600; color: #555; }
-.form-group-premium input, .form-group-premium select {
-    padding: 10px 15px;
-    border: 2px solid var(--tefa-border);
-    border-radius: 8px;
-    outline: none;
-    font-size: 14px;
-    transition: 0.3s;
-}
-.form-group-premium input:focus, .form-group-premium select:focus { border-color: var(--tefa-orange); }
-
-.search-input-wrapper { position: relative; }
-.search-input-wrapper i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #aaa; }
-.search-input-wrapper input { padding-left: 35px; width: 100%; }
-
-.form-actions-premium { display: flex; gap: 10px; }
-.btn-filter-premium {
-    background: var(--tefa-brown); color: #fff; border: none; padding: 11px 25px;
-    border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s;
-}
-.btn-filter-premium:hover { background: var(--tefa-orange); transform: translateY(-2px); }
-.btn-reset-premium {
-    background: #f1f1f1; color: #555; text-decoration: none; padding: 11px 20px;
-    border-radius: 8px; font-weight: 600; font-size: 14px; transition: 0.3s;
-}
-
-/* Table Section */
-.table-card-premium {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    overflow: hidden;
-}
-.table-header-premium {
-    padding: 20px 25px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #f0f0f0;
-}
-.table-header-premium h4 { margin: 0; color: var(--tefa-brown); font-weight: 600; }
-.table-actions { display: flex; gap: 10px; }
-.btn-action-premium {
-    border: none; padding: 8px 15px; border-radius: 6px; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px;
-}
-.btn-action-premium.print { background: #f8f9fa; color: #333; }
-.btn-action-premium.excel { background: #e8f5e9; color: #2e7d32; }
-.btn-action-premium.pdf { background: #ffebee; color: #c62828; }
-.btn-action-premium:hover { transform: translateY(-2px); opacity: 0.9; }
-
-.custom-table-premium { width: 100%; border-collapse: collapse; }
-.custom-table-premium th {
-    background: #fdfdfd; padding: 15px; text-align: left; font-size: 13px;
-    color: #888; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #f0f0f0;
-}
-.custom-table-premium td { padding: 15px; border-bottom: 1px solid #f9f9f9; vertical-align: middle; }
-
-.date-col strong { display: block; font-size: 14px; color: #333; }
-.date-col small { color: #999; }
-
-.sku-tag {
-    background: #f1f1f1; padding: 2px 8px; border-radius: 4px; font-family: monospace;
-    font-size: 12px; color: #555; margin-right: 8px;
-}
-.product-name { font-weight: 600; color: var(--tefa-brown); }
-
-.badge-tipe { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-.badge-masuk { background: #e8f5e9; color: var(--tefa-green); }
-.badge-keluar { background: #ffebee; color: var(--tefa-red); }
-.badge-rusak { background: #fff3e0; color: var(--tefa-orange); }
-
-.text-bold { font-weight: 700; }
-.text-green { color: var(--tefa-green); }
-.text-red { color: var(--tefa-red); }
-.text-muted { color: #999; font-size: 13px; }
-.italic { font-style: italic; }
-
-.petugas-col { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #666; }
-.petugas-col i { font-size: 16px; color: #ccc; }
-
-.empty-state { text-align: center; padding: 80px !important; }
-.empty-content i { font-size: 50px; color: #eee; margin-bottom: 15px; }
-.empty-content p { color: #bbb; margin: 0; }
-
-/* Media Print */
-@media print {
-    aside, .sidebar, .filter-card-premium, .table-actions, .btn-reset-premium { display: none !important; }
-    .mutation-report-container { padding: 0; }
-    .table-card-premium { box-shadow: none; border: 1px solid #eee; }
-    .custom-table-premium th { background: #eee !important; color: #000 !important; }
-}
-</style>
+</section>
 
 <?php include 'includes/footer.php'; ?>

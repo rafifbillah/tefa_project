@@ -44,7 +44,7 @@ $basePath = 'admin/';
       <div class="right-panel" role="main">
         <div class="login-box">
           <div class="logo">
-             <img src="assets/img/logo.jpg" alt="Logo">
+            <img src="assets/img/logo.jpg" alt="Logo">
             <span>TEFA Bakery and Coffee</span>
           </div>
 

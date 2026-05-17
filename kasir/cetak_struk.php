@@ -10,17 +10,18 @@ try {
 
     $stmtTrx = $db->prepare(
         "SELECT t.*, u.nama_lengkap AS nama_kasir, u.username
-         FROM transactions t JOIN users u ON t.user_id = u.id
-         WHERE t.id = ? AND t.user_id = ?"
+         FROM transactions t JOIN users u ON t.id_user = u.id_user
+         WHERE t.id = ? AND t.id_user = ?"
     );
-    $stmtTrx->execute([$id, $_SESSION['user_id']]);
+    $userId = !empty($_SESSION['id_user']) ? (int) $_SESSION['id_user'] : 1;
+    $stmtTrx->execute([$id, $userId]);
     $trx = $stmtTrx->fetch();
 
     if (!$trx) die('<p style="font-family:sans-serif;color:red;padding:20px;">Transaksi tidak ditemukan.</p>');
 
     $stmtDetail = $db->prepare(
         "SELECT d.*, p.nama_produk FROM transaction_details d
-         JOIN products p ON d.product_id = p.id
+         JOIN products p ON d.id_produk = p.id_produk
          WHERE d.transaction_id = ?"
     );
     $stmtDetail->execute([$id]);

@@ -16,7 +16,7 @@ class ShiftManager
     /**
      * Memulai shift baru jika belum ada yang terbuka untuk user tersebut.
      */
-    public function startShift(int $userId, float $startingCash = 0): void
+    public function startShift(int $userId): void
     {
         if ($this->getActiveShift($userId)) {
             // Sudah ada shift yang open, abaikan.
@@ -24,27 +24,25 @@ class ShiftManager
         }
 
         $stmt = $this->db->prepare(
-            "INSERT INTO shifts (user_id, start_time, starting_cash, status) 
-             VALUES (:user_id, NOW(), :starting_cash, 'open')"
+            "INSERT INTO shifts (id_user, start_time, status) 
+             VALUES (:id_user, NOW(), 'open')"
         );
         $stmt->execute([
-            ':user_id' => $userId,
-            ':starting_cash' => $startingCash
+            ':id_user' => $userId
         ]);
     }
 
     /**
      * Mengakhiri shift yang sedang berjalan.
      */
-    public function endShift(int $shiftId, float $actualCash = 0, string $notes = ''): void
+    public function endShift(int $shiftId, string $notes = ''): void
     {
         $stmt = $this->db->prepare(
             "UPDATE shifts 
-             SET end_time = NOW(), actual_cash = :actual_cash, notes = :notes, status = 'closed'
-             WHERE id = :id AND status = 'open'"
+             SET end_time = NOW(), notes = :notes, status = 'closed'
+             WHERE id_shift = :id AND status = 'open'"
         );
         $stmt->execute([
-            ':actual_cash' => $actualCash,
             ':notes'       => $notes,
             ':id'          => $shiftId
         ]);
@@ -56,9 +54,9 @@ class ShiftManager
     public function getActiveShift(int $userId): ?array
     {
         $stmt = $this->db->prepare(
-            "SELECT * FROM shifts WHERE user_id = :user_id AND status = 'open' LIMIT 1"
+            "SELECT * FROM shifts WHERE id_user = :id_user AND status = 'open' LIMIT 1"
         );
-        $stmt->execute([':user_id' => $userId]);
+        $stmt->execute([':id_user' => $userId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
         return $result ?: null;

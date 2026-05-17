@@ -50,6 +50,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     switch ($action) {
         case 'create_barang':
+            $sku = $_POST['sku'] ?? '';
+            $nama_produk = $_POST['nama_produk'] ?? '';
+
+            if ($barangModel->isNameExists($nama_produk)) {
+                Flash::set('error', 'Nama produk sudah ada. Silakan gunakan nama lain.');
+                header("Location: ../admin/barang.php");
+                exit;
+            }
+
+            if (!empty($sku) && $barangModel->isSkuExists($sku)) {
+                Flash::set('error', 'SKU sudah digunakan oleh produk lain.');
+                header("Location: ../admin/barang.php");
+                exit;
+            }
+
+            $stok = $_POST['stok'] ?? 0;
+            $exp_date = $_POST['exp_date'] ?? null;
+
+            if ($exp_date && $exp_date < date('Y-m-d')) {
+                Flash::set('error', 'Tanggal kadaluarsa tidak boleh tanggal yang sudah lewat.');
+                header("Location: ../admin/barang.php");
+                exit;
+            }
+
             $imageName = handleUpload($_FILES['image'] ?? []);
             if ($imageName === false) {
                 header("Location: ../admin/barang.php");
@@ -57,12 +81,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $data = [
-                'sku'         => $_POST['sku'] ?? '',
-                'nama_produk' => $_POST['nama_produk'] ?? '',
-                'category_id' => $_POST['category_id'] ?? null,
-                'harga'       => str_replace('.', '', $_POST['harga'] ?? 0),
-                'stok'        => $_POST['stok'] ?? 0,
-                'exp_date'    => $_POST['exp_date'] ?? null,
+                'sku'         => $sku,
+                'nama_produk' => $nama_produk,
+                'id_kategori' => $_POST['id_kategori'] ?? null,
+                'harga'       => (int)str_replace('.', '', $_POST['harga'] ?? 0),
+                'stok'        => $stok,
+                'exp_date'    => $exp_date,
                 'status'      => $_POST['status'] ?? 'aktif',
                 'image'       => $imageName
             ];
@@ -76,9 +100,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         case 'update_barang':
             $id = $_POST['barang_id'];
+            $sku = $_POST['sku'] ?? '';
+            $nama_produk = $_POST['nama_produk'] ?? '';
+
+            if ($barangModel->isNameExists($nama_produk, $id)) {
+                Flash::set('error', 'Nama produk sudah ada. Silakan gunakan nama lain.');
+                header("Location: ../admin/barang.php");
+                exit;
+            }
+
+            if (!empty($sku) && $barangModel->isSkuExists($sku, $id)) {
+                Flash::set('error', 'SKU sudah digunakan oleh produk lain.');
+                header("Location: ../admin/barang.php");
+                exit;
+            }
+
+            $stok = $_POST['stok'] ?? 0;
+            $exp_date = $_POST['exp_date'] ?? null;
+
+            if ($exp_date && $exp_date < date('Y-m-d')) {
+                Flash::set('error', 'Tanggal kadaluarsa tidak boleh tanggal yang sudah lewat.');
+                header("Location: ../admin/barang.php");
+                exit;
+            }
+
             $oldBarang = $barangModel->getById($id);
-            
-            $imageName = '';
             if (!empty($_FILES['image']['name'])) {
                 $imageName = handleUpload($_FILES['image']);
                 if ($imageName === false) {
@@ -96,12 +142,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $data = [
-                'sku'         => $_POST['sku'] ?? '',
-                'nama_produk' => $_POST['nama_produk'] ?? '',
-                'category_id' => $_POST['category_id'] ?? null,
-                'harga'       => str_replace('.', '', $_POST['harga'] ?? 0),
-                'stok'        => $_POST['stok'] ?? 0,
-                'exp_date'    => $_POST['exp_date'] ?? null,
+                'sku'         => $sku,
+                'nama_produk' => $nama_produk,
+                'id_kategori' => $_POST['id_kategori'] ?? null,
+                'harga'       => (int)str_replace('.', '', $_POST['harga'] ?? 0),
+                'stok'        => $stok,
+                'exp_date'    => $exp_date,
                 'status'      => $_POST['status'] ?? 'aktif',
                 'image'       => $imageName 
             ];

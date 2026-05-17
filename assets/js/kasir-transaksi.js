@@ -9,6 +9,7 @@
 let cart = []; // Array item di keranjang
 let paymentMethod = "tunai"; // Metode bayar aktif
 let currentCategory = "semua"; // Kategori filter aktif
+let isMobileCartOpen = false; // State keranjang di mobile
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,34 @@ function formatRp(num) {
  */
 function getCartTotal() {
   return cart.reduce((sum, item) => sum + item.harga * item.quantity, 0);
+}
+
+/**
+ * Toggle keranjang belanja di tampilan mobile.
+ */
+function toggleMobileCart() {
+  const sidebar = document.getElementById("cart-sidebar");
+  if (!sidebar) return;
+
+  isMobileCartOpen = !isMobileCartOpen;
+  if (isMobileCartOpen) {
+    sidebar.classList.remove("translate-x-full");
+    document.body.classList.add("overflow-hidden");
+  } else {
+    sidebar.classList.add("translate-x-full");
+    document.body.classList.remove("overflow-hidden");
+  }
+}
+
+/**
+ * Kosongkan seluruh keranjang.
+ */
+function clearCart() {
+  if (confirm("Kosongkan keranjang belanja?")) {
+    cart = [];
+    renderCart();
+    if (window.innerWidth < 1024) toggleMobileCart();
+  }
 }
 
 // ─── Filter & Pencarian ───────────────────────────────────────────────────────
@@ -84,13 +113,23 @@ document.getElementById("searchInput")?.addEventListener("input", function () {
  * @param {number} id
  * @param {string} nama
  * @param {number} harga
+ * @param {number} stok
  */
-function addToCart(id, nama, harga) {
+function addToCart(id, nama, harga, stok) {
+  if (stok <= 0) {
+    showToast("Stok telah habis", "error");
+    return;
+  }
+
   const existing = cart.find((item) => item.id === id);
   if (existing) {
+    if (existing.quantity >= stok) {
+      showToast("Stok telah habis", "error");
+      return;
+    }
     existing.quantity += 1;
   } else {
-    cart.push({ id, nama, harga, quantity: 1 });
+    cart.push({ id, nama, harga, quantity: 1, stok: stok });
   }
   renderCart();
 }
@@ -104,9 +143,38 @@ function updateQuantity(id, delta) {
   const item = cart.find((i) => i.id === id);
   if (!item) return;
 
+  if (delta > 0 && item.quantity >= item.stok) {
+    showToast("Stok telah habis", "error");
+    return;
+  }
+
   item.quantity += delta;
   if (item.quantity <= 0) {
     cart = cart.filter((i) => i.id !== id);
+  }
+  renderCart();
+}
+
+/**
+ * Set kuantitas item secara langsung dari input.
+ * @param {number} id
+ * @param {number} value
+ */
+function setQuantity(id, value) {
+  const item = cart.find((i) => i.id === id);
+  if (!item) return;
+
+  let qty = parseInt(value, 10) || 0;
+  
+  if (qty > item.stok) {
+    showToast(`Stok tidak mencukupi (Maks: ${item.stok})`, "error");
+    qty = item.stok;
+  }
+
+  if (qty <= 0) {
+    cart = cart.filter((i) => i.id !== id);
+  } else {
+    item.quantity = qty;
   }
   renderCart();
 }
@@ -125,6 +193,13 @@ function renderCart() {
   const totalItems = cart.reduce((sum, i) => sum + i.quantity, 0);
   if (headerEl) headerEl.innerText = `Keranjang — ${totalItems} item`;
 
+  // Update mobile badge
+  const badgeMobile = document.getElementById("cart-badge-mobile");
+  if (badgeMobile) {
+    badgeMobile.innerText = totalItems;
+    badgeMobile.classList.toggle("hidden", totalItems === 0);
+  }
+
   // Kosong
   if (cart.length === 0) {
     container.innerHTML = `
@@ -135,6 +210,7 @@ function renderCart() {
                 <p class="text-gray-400 font-medium">Keranjang masih kosong</p>
             </div>`;
     footer?.classList.add("hidden");
+    updateProductCardsVisuals();
     return;
   }
 
@@ -149,10 +225,12 @@ function renderCart() {
                 <h5 class="font-bold text-[13px] text-gray-700 leading-tight mb-0.5 truncate">${item.nama}</h5>
                 <p class="text-[11px] text-gray-400">Rp ${formatRp(item.harga)} / pcs</p>
             </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
+            <div class="flex items-center gap-1 flex-shrink-0">
                 <button onclick="updateQuantity(${item.id}, -1)"
                     class="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition shadow-sm font-bold">−</button>
-                <span class="font-bold text-sm text-gray-700 w-5 text-center">${item.quantity}</span>
+                <input type="number" value="${item.quantity}" min="1" max="${item.stok}"
+                    onchange="setQuantity(${item.id}, this.value)"
+                    class="font-bold text-sm text-gray-700 w-10 text-center bg-gray-50 rounded-lg border-none focus:ring-1 focus:ring-amber-500 py-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                 <button onclick="updateQuantity(${item.id}, 1)"
                     class="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-green-50 hover:border-green-200 hover:text-green-600 transition shadow-sm font-bold">+</button>
             </div>
@@ -170,6 +248,38 @@ function renderCart() {
 
   // Update kembalian jika input sudah ada
   updateChange();
+  updateProductCardsVisuals();
+}
+
+/**
+ * Update visual state of all product cards based on remaining available stock.
+ */
+function updateProductCardsVisuals() {
+  document.querySelectorAll(".product-card").forEach((card) => {
+    const productId = parseInt(card.id.replace("product-card-", ""), 10);
+    if (isNaN(productId)) return;
+
+    const stokAsal = parseInt(card.dataset.stokAsal, 10) || 0;
+    const cartItem = cart.find((item) => item.id === productId);
+    const qtyInCart = cartItem ? cartItem.quantity : 0;
+    const remainingStock = stokAsal - qtyInCart;
+
+    // Update stock label
+    const stockLabel = card.querySelector(".stock-label");
+    if (stockLabel) {
+      stockLabel.innerText = `STOK: ${remainingStock}`;
+    }
+
+    // Toggle disabled class and badge-habis
+    const badgeHabis = card.querySelector(".badge-habis");
+    if (remainingStock <= 0) {
+      card.classList.add("pointer-events-none", "opacity-60");
+      if (badgeHabis) badgeHabis.classList.remove("hidden");
+    } else {
+      card.classList.remove("pointer-events-none", "opacity-60");
+      if (badgeHabis) badgeHabis.classList.add("hidden");
+    }
+  });
 }
 
 // ─── Pembayaran ───────────────────────────────────────────────────────────────
@@ -214,9 +324,6 @@ document.getElementById("bukti-bayar")?.addEventListener("change", function () {
     label.textContent = this.files[0]?.name ?? "Tidak ada file yang dipilih";
 });
 
-/**
- * Hitung dan tampilkan kembalian secara real-time.
- */
 function updateChange() {
   const total = getCartTotal();
   const cashInput = document.getElementById("cash-amount");
@@ -225,6 +332,20 @@ function updateChange() {
 
   const bayar = parseInt(cashInput?.value ?? "0", 10) || 0;
   const change = bayar - total;
+
+  const submitBtn = document.getElementById("confirm-payment");
+  const isTunaiValid = paymentMethod === "tunai" ? change >= 0 : true;
+  const isCartNotEmpty = cart.length > 0;
+
+  if (submitBtn) {
+    if (isTunaiValid && isCartNotEmpty) {
+      submitBtn.disabled = false;
+      submitBtn.className = "w-full bg-[#D97706] hover:bg-[#B45309] text-white py-3.5 rounded-2xl font-bold text-base flex items-center justify-center gap-2.5 transition-all shadow-lg active:scale-95";
+    } else {
+      submitBtn.disabled = true;
+      submitBtn.className = "w-full bg-gray-300 text-gray-500 py-3.5 rounded-2xl font-bold text-base flex items-center justify-center gap-2.5 transition-all cursor-not-allowed";
+    }
+  }
 
   // Jika QRIS/Transfer, tidak perlu tampilkan kembalian
   if (paymentMethod !== "tunai") {
@@ -272,26 +393,30 @@ document
     btn.innerHTML =
       '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Memproses...';
 
-    // ── Kirim payload ke backend OOP ───────────────────────────────
-    const payload = {
-      items: cart.map(({ id, nama, harga, quantity }) => ({
-        id,
+    // ── Persiapkan payload (Gunakan FormData untuk mendukung upload file) ────
+    const formData = new FormData();
+    formData.append('items', JSON.stringify(cart.map(({ id, nama, harga, quantity }) => ({
+        id_produk: id,
         nama,
         harga,
         quantity,
-      })),
-      total: total,
-      bayar: paymentMethod === "tunai" ? bayar : total,
-      kembali: paymentMethod === "tunai" ? Math.max(0, bayar - total) : 0,
-      metode: paymentMethod,
-      catatan: catatan,
-    };
+    }))));
+    formData.append('total', total);
+    formData.append('bayar', paymentMethod === "tunai" ? bayar : total);
+    formData.append('kembali', paymentMethod === "tunai" ? Math.max(0, bayar - total) : 0);
+    formData.append('metode', paymentMethod);
+    formData.append('catatan', catatan);
+
+    // Ambil file bukti jika ada
+    const fileInput = document.getElementById('bukti-bayar');
+    if (fileInput && fileInput.files[0]) {
+        formData.append('bukti_pembayaran', fileInput.files[0]);
+    }
 
     try {
       const response = await fetch("process_transaction.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: formData, // Browser otomatis set Content-Type: multipart/form-data
       });
 
       // Tangani respons non-JSON (misal error PHP 500)
@@ -336,15 +461,21 @@ function showToast(message, type = "success") {
 
   const toast = document.createElement("div");
   toast.id = "app-toast";
-  toast.className = `fixed bottom-6 right-6 z-[999] px-5 py-3 rounded-2xl shadow-xl text-sm font-bold flex items-center gap-3 ${colors} transition-all duration-300`;
-  toast.innerHTML = message;
+  // Posisi di top-right dengan initial state geser ke kanan (translate-x)
+  toast.className = `fixed top-6 right-6 z-[999] px-5 py-3 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-3 ${colors} transition-all duration-500 transform translate-x-[120%]`;
+  toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation'}"></i> ${message}`;
 
   document.body.appendChild(toast);
 
+  // Trigger masuk (slide in)
+  setTimeout(() => {
+    toast.classList.remove("translate-x-[120%]");
+  }, 10);
+
   // Auto-remove setelah 3.5 detik
   setTimeout(() => {
+    toast.classList.add("translate-x-[120%]");
     toast.style.opacity = "0";
-    toast.style.transform = "translateY(10px)";
-    setTimeout(() => toast.remove(), 300);
+    setTimeout(() => toast.remove(), 500);
   }, 3500);
 }

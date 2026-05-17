@@ -318,8 +318,7 @@
         scales: {
           y: {
             display: false,
-            beginAtZero: false,
-            min: 1800,
+            beginAtZero: true
           },
           x: {
             grid: {
@@ -339,6 +338,9 @@
           mode: "index",
         },
         plugins: {
+          legend: {
+            display: false,
+          },
           tooltip: {
             backgroundColor: config.chart.colors.secondary,
             titleFont: {
@@ -354,7 +356,7 @@
             displayColors: false,
             callbacks: {
               label: function (context) {
-                return "Sales: " + context.parsed.y.toLocaleString("id-ID");
+                return "Sales: Rp " + context.parsed.y.toLocaleString("id-ID");
               },
             },
           },
@@ -442,15 +444,39 @@
 
     elements.filterBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
+        const filter = btn.dataset.filter;
+        
         // Remove active class from all
         elements.filterBtns.forEach((b) => b.classList.remove("active"));
 
         // Add active to clicked
         btn.classList.add("active");
 
-        // Here you would typically update chart data
-        // For demo, we'll just log the filter
-        console.log("Filter changed to:", btn.dataset.filter);
+        // Update chart data via AJAX
+        fetch(`ajax_chart_data.php?filter=${filter}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              console.error(data.error);
+              return;
+            }
+
+            // Update Line Chart
+            if (config.chart.instances.lineChart) {
+              const chart = config.chart.instances.lineChart;
+              chart.data.labels = data.labels;
+              chart.data.datasets[0].data = data.data;
+              chart.update();
+            }
+
+            // Update balance amount in UI
+            const balanceAmount = document.querySelector(".balance-amount span.counter");
+            if (balanceAmount) {
+              balanceAmount.dataset.target = data.total;
+              animateCounter(balanceAmount, data.total);
+            }
+          })
+          .catch(error => console.error("Error fetching chart data:", error));
       });
     });
   }
@@ -492,6 +518,70 @@
     resizeCharts();
   }
 
+  /**
+   * Initialize Best Sellers Modal
+   */
+  function initBestSellersModal() {
+    const btn = document.querySelector(".view-all-btn");
+    const modal = document.getElementById("modalBestSellers");
+    const tbody = document.querySelector("#tableAllBestSellers tbody");
+
+    if (!btn || !modal || !tbody) return;
+
+    btn.addEventListener("click", () => {
+      modal.style.display = "flex";
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin"></i> Memuat data...</td></tr>';
+
+      fetch("ajax_all_best_sellers.php")
+        .then(res => res.json())
+        .then(data => {
+          tbody.innerHTML = "";
+          if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Belum ada data penjualan.</td></tr>';
+            return;
+          }
+
+          data.forEach((item, index) => {
+            const row = document.createElement("tr");
+            
+            // Handle image or placeholder icon
+            let imageHtml = `
+              <div class="img-placeholder-admin" style="width:44px; height:44px; border-radius:8px; font-size:16px; display:flex; align-items:center; justify-content:center; background:#f1f5f9; color:#cbd5e1;">
+                <i class="fas fa-bread-slice"></i>
+              </div>`;
+            
+            if (item.image && item.image !== "" && item.image !== "default_product.jpg") {
+              imageHtml = `<img src="../assets/img/products/${item.image}" alt="${item.nama_produk}" style="width:100%; height:100%; object-fit:cover; display:none; border-radius:8px;" onload="this.style.display='block'; this.previousElementSibling.style.display='none';">` + imageHtml;
+            }
+
+            row.innerHTML = `
+              <td style="text-align:center; font-weight:bold;">${index + 1}</td>
+              <td>
+                <div class="prod-info">
+                  <div class="prod-img-wrapper" style="width:44px; height:44px; border-radius:8px;">
+                    ${imageHtml}
+                  </div>
+                  <span>${item.nama_produk}</span>
+                </div>
+              </td>
+              <td style="text-align:center;"><span class="sold-count">x${item.total_qty}</span></td>
+              <td style="text-align:right; font-weight:600;">Rp ${parseInt(item.total_sales).toLocaleString("id-ID")}</td>
+            `;
+            tbody.appendChild(row);
+          });
+        })
+        .catch(err => {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red; padding:20px;">Gagal memuat data.</td></tr>';
+          console.error(err);
+        });
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) modal.style.display = "none";
+    });
+  }
+
   // ==========================================
   // Initialize
   // ==========================================
@@ -506,6 +596,7 @@
     initFilterTabs();
     initLogout();
     initImageErrorHandling();
+    initBestSellersModal();
 
     // Initialize charts
     initLineChart();

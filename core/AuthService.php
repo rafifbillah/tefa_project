@@ -29,7 +29,7 @@ class AuthService
         try {
             $db   = Database::getConnection();
             $stmt = $db->prepare(
-                'SELECT id, username, password, nama_lengkap, role, status
+                'SELECT id_user as id, username, password, nama_lengkap, role, status
                  FROM users
                  WHERE username = :username
                  LIMIT 1'
@@ -61,7 +61,7 @@ class AuthService
 
         session_regenerate_id(true);
 
-        $_SESSION['user_id']      = (int) $user['id'];
+        $_SESSION['id_user']      = (int) $user['id_user'];
         $_SESSION['username']     = $user['username'];
         $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
         $_SESSION['role']         = $user['role'];
@@ -76,7 +76,7 @@ class AuthService
         if ($_SESSION['role'] === 'kasir') {
             require_once __DIR__ . '/ShiftManager.php';
             $shiftManager = new ShiftManager();
-            $shiftManager->startShift($_SESSION['user_id'], 0);
+            $shiftManager->startShift($_SESSION['id_user']);
         }
 
         return true;
@@ -84,12 +84,12 @@ class AuthService
 
     public static function logout(): void
     {
-        if (isset($_SESSION['role']) && $_SESSION['role'] === 'kasir' && isset($_SESSION['user_id'])) {
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'kasir' && isset($_SESSION['id_user'])) {
             require_once __DIR__ . '/ShiftManager.php';
             $shiftManager = new ShiftManager();
-            $activeShift = $shiftManager->getActiveShift($_SESSION['user_id']);
+            $activeShift = $shiftManager->getActiveShift($_SESSION['id_user']);
             if ($activeShift) {
-                $shiftManager->endShift((int)$activeShift['id'], 0, 'Auto-closed via logout');
+                $shiftManager->endShift((int)$activeShift['id_shift'], 'Auto-closed via logout');
             }
         }
 
@@ -120,7 +120,7 @@ class AuthService
             return [];
         }
         return [
-            'id'           => $_SESSION['user_id']      ?? null,
+            'id'           => $_SESSION['id_user']      ?? null,
             'username'     => $_SESSION['username']     ?? '',
             'nama_lengkap' => $_SESSION['nama_lengkap'] ?? '',
             'role'         => $_SESSION['role']         ?? '',

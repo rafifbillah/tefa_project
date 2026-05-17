@@ -111,7 +111,7 @@ $pageHeading  = 'Data Inventori Barang';
                                 <div class="action-btns">
                                     <form method="POST" action="../controllers/BarangController.php" style="display:inline;">
                                         <input type="hidden" name="action" value="toggle_status">
-                                        <input type="hidden" name="barang_id" value="<?= $b['id'] ?>">
+                                        <input type="hidden" name="barang_id" value="<?= $b['id_produk'] ?>">
                                         <input type="hidden" name="new_status" value="<?= $b['status'] === 'aktif' ? 'non-aktif' : 'aktif' ?>">
                                         <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                         <button type="submit" class="btn-toggle-action <?= $b['status'] === 'aktif' ? 'deactivate' : 'activate' ?>" title="<?= $b['status'] === 'aktif' ? 'Nonaktifkan' : 'Aktifkan' ?>">
@@ -123,7 +123,7 @@ $pageHeading  = 'Data Inventori Barang';
                                     </button>
                                     <form method="POST" action="../controllers/BarangController.php" onsubmit="return confirm('Hapus barang ini?')" style="display:inline;">
                                         <input type="hidden" name="action" value="delete_barang">
-                                        <input type="hidden" name="barang_id" value="<?= $b['id'] ?>">
+                                        <input type="hidden" name="barang_id" value="<?= $b['id_produk'] ?>">
                                         <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                         <button type="submit" class="btn-delete-action" title="Hapus">
                                             <i class="fas fa-trash-alt"></i>
@@ -155,20 +155,22 @@ $pageHeading  = 'Data Inventori Barang';
                 <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
 
                 <div class="form-grid-premium">
-                    <div class="form-group">
+                    <div class="form-group" id="group_sku">
                         <label>SKU Produk <span class="req">*</span></label>
-                        <input type="text" name="sku" id="input_sku" required placeholder="Contoh: CAKE-001">
+                        <input type="text" name="sku" id="input_sku" required placeholder="Contoh: CAKE-001" onblur="validateUnique('sku', this)">
+                        <span class="validation-msg" id="msg_sku">SKU sudah digunakan.</span>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="group_nama">
                         <label>Nama Produk <span class="req">*</span></label>
-                        <input type="text" name="nama_produk" id="input_nama" required placeholder="Nama barang">
+                        <input type="text" name="nama_produk" id="input_nama" required placeholder="Nama barang" onblur="validateUnique('name', this)">
+                        <span class="validation-msg" id="msg_nama">Nama produk sudah ada.</span>
                     </div>
                     <div class="form-group">
                         <label>Kategori <span class="req">*</span></label>
-                        <select name="category_id" id="input_category" required>
+                        <select name="id_kategori" id="input_category" required>
                             <option value="">Pilih Kategori</option>
                             <?php foreach($categories as $cat): ?>
-                                <option value="<?= $cat['id'] ?>"><?= htmlspecialchars($cat['nama_kategori']) ?></option>
+                                <option value="<?= $cat['id_kategori'] ?>"><?= htmlspecialchars($cat['nama_kategori']) ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -182,7 +184,7 @@ $pageHeading  = 'Data Inventori Barang';
                     </div>
                     <div class="form-group">
                         <label>Exp. Date</label>
-                        <input type="date" name="exp_date" id="input_exp_date">
+                        <input type="date" name="exp_date" id="input_exp_date" min="<?= date('Y-m-d') ?>">
                     </div>
                     <div class="form-group">
                         <label>Status <span class="req">*</span></label>
@@ -247,12 +249,12 @@ $pageHeading  = 'Data Inventori Barang';
                                 <td style="padding: 10px;"><?= htmlspecialchars($cat['nama_kategori']) ?></td>
                                 <td style="padding: 10px; text-align: center;">
                                     <div style="display:flex; gap:5px; justify-content: center;">
-                                        <button class="btn-edit-action" onclick="editCategory(<?= $cat['id'] ?>, '<?= htmlspecialchars($cat['nama_kategori'], ENT_QUOTES) ?>')">
+                                        <button class="btn-edit-action" onclick="editCategory(<?= $cat['id_kategori'] ?>, '<?= htmlspecialchars($cat['nama_kategori'], ENT_QUOTES) ?>')">
                                             <i class="fas fa-edit" style="font-size: 12px;"></i>
                                         </button>
                                         <form method="POST" action="../controllers/CategoryController.php" onsubmit="return confirm('Hapus kategori ini?')">
                                             <input type="hidden" name="action" value="delete_category">
-                                            <input type="hidden" name="category_id" value="<?= $cat['id'] ?>">
+                                            <input type="hidden" name="id_kategori" value="<?= $cat['id_kategori'] ?>">
                                             <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                                             <button type="submit" class="btn-delete-action">
                                                 <i class="fas fa-trash-alt" style="font-size: 12px;"></i>
@@ -271,7 +273,7 @@ $pageHeading  = 'Data Inventori Barang';
                 <h4 id="formCategoryTitle" style="margin-bottom: 15px; color: var(--tefa-brown);">Tambah Kategori Baru</h4>
                 <form action="../controllers/CategoryController.php" method="POST">
                     <input type="hidden" name="action" id="categoryFormAction" value="create_category">
-                    <input type="hidden" name="category_id" id="category_id_input">
+                    <input type="hidden" name="id_kategori" id="id_kategori_input">
                     <input type="hidden" name="csrf_token" value="<?= $csrfToken ?>">
                     
                     <div class="form-group">
@@ -437,6 +439,33 @@ $pageHeading  = 'Data Inventori Barang';
     color: #cbd5e1;
     font-size: 1.2rem;
 }
+
+/* Validation Styles */
+.form-group.error input, .form-group.error select {
+    border-color: var(--tefa-red) !important;
+}
+.validation-msg {
+    font-size: 11px;
+    color: var(--tefa-red);
+    margin-top: 4px;
+    display: none;
+}
+.form-group.error .validation-msg {
+    display: block;
+}
+.input-loading {
+    position: relative;
+}
+.input-loading::after {
+    content: "\f110";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    right: 12px;
+    top: 38px;
+    color: var(--tefa-orange);
+    animation: fa-spin 1s infinite linear;
+}
 </style>
 
 <script>
@@ -452,18 +481,21 @@ function openTambahModal() {
     preview.querySelector('i').style.display = 'block';
     document.getElementById('fileNameDisplay').innerText = 'Pilih Foto Produk...';
     
+    // Clear Validation Errors
+    document.querySelectorAll('.form-group').forEach(g => g.classList.remove('error'));
+    
     document.getElementById('modalBarang').style.display = 'flex';
 }
 
 function openEditModal(data) {
     document.getElementById('modalBarangTitle').innerText = 'Edit Data Barang';
     document.getElementById('formAction').value = 'update_barang';
-    document.getElementById('barang_id').value = data.id;
+    document.getElementById('barang_id').value = data.id_produk;
     
     document.getElementById('input_sku').value = data.sku;
     document.getElementById('input_nama').value = data.nama_produk;
-    document.getElementById('input_category').value = data.category_id;
-    document.getElementById('input_harga').value = formatMoney(data.harga);
+    document.getElementById('input_category').value = data.id_kategori;
+    document.getElementById('input_harga').value = formatMoney(Math.round(data.harga));
     document.getElementById('input_stok').value = data.stok;
     document.getElementById('input_exp_date').value = data.exp_date;
     document.getElementById('input_status').value = data.status;
@@ -485,6 +517,9 @@ function openEditModal(data) {
         document.getElementById('fileNameDisplay').innerText = 'Pilih Foto Produk...';
     }
 
+    // Clear Validation Errors
+    document.querySelectorAll('.form-group').forEach(g => g.classList.remove('error'));
+
     document.getElementById('modalBarang').style.display = 'flex';
 }
 
@@ -499,6 +534,14 @@ function previewImage(input) {
     const fileNameDisplay = document.getElementById('fileNameDisplay');
     
     if (input.files && input.files[0]) {
+        // Validasi ukuran file (2MB)
+        if (input.files[0].size > 2 * 1024 * 1024) {
+            alert('Ukuran file terlalu besar! Maksimal 2MB.');
+            input.value = '';
+            fileNameDisplay.innerText = 'Pilih Foto Produk...';
+            return;
+        }
+
         fileNameDisplay.innerText = input.files[0].name;
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -509,6 +552,74 @@ function previewImage(input) {
         reader.readAsDataURL(input.files[0]);
     }
 }
+
+// Real-time Validation
+let isSubmitting = false;
+
+async function validateUnique(type, input) {
+    const value = input.value.trim();
+    if (!value) return;
+
+    const group = document.getElementById('group_' + type);
+    const msg = document.getElementById('msg_' + type);
+    const excludeId = document.getElementById('barang_id').value;
+
+    group.classList.add('input-loading');
+    
+    try {
+        const response = await fetch(`ajax_check_product.php?type=${type}&value=${encodeURIComponent(value)}&exclude_id=${excludeId}`);
+        const data = await response.json();
+        
+        if (data.exists) {
+            group.classList.add('error');
+            msg.innerText = data.message;
+        } else {
+            group.classList.remove('error');
+        }
+    } catch (error) {
+        console.error('Validation error:', error);
+    } finally {
+        group.classList.remove('input-loading');
+    }
+}
+
+document.getElementById('formBarang').onsubmit = function(e) {
+    const harga = document.getElementById('input_harga').value.replace(/\./g, '');
+    const stok = document.getElementById('input_stok').value;
+    const errors = document.querySelectorAll('.form-group.error');
+
+    if (errors.length > 0) {
+        e.preventDefault();
+        alert('Mohon perbaiki kesalahan pada form sebelum menyimpan.');
+        return false;
+    }
+
+    if (parseInt(harga) <= 0) {
+        e.preventDefault();
+        alert('Harga harus lebih besar dari 0.');
+        return false;
+    }
+
+    if (parseInt(stok) < 0) {
+        e.preventDefault();
+        alert('Stok tidak boleh negatif.');
+        return false;
+    }
+
+    const expDate = document.getElementById('input_exp_date').value;
+    if (expDate) {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        const selectedDate = new Date(expDate);
+        if (selectedDate < today) {
+            e.preventDefault();
+            alert('Tanggal kadaluarsa tidak boleh tanggal yang sudah lewat.');
+            return false;
+        }
+    }
+    
+    return true;
+};
 
 /* Category Modal Logic */
 function openCategoryModal() {
@@ -531,7 +642,7 @@ function showCategoryForm() {
     document.getElementById('categoryFormView').style.display = 'block';
     document.getElementById('formCategoryTitle').innerText = 'Tambah Kategori Baru';
     document.getElementById('categoryFormAction').value = 'create_category';
-    document.getElementById('category_id_input').value = '';
+    document.getElementById('id_kategori_input').value = '';
     document.getElementById('input_nama_kategori').value = '';
 }
 
@@ -540,7 +651,7 @@ function editCategory(id, nama) {
     document.getElementById('categoryFormView').style.display = 'block';
     document.getElementById('formCategoryTitle').innerText = 'Edit Kategori';
     document.getElementById('categoryFormAction').value = 'update_category';
-    document.getElementById('category_id_input').value = id;
+    document.getElementById('id_kategori_input').value = id;
     document.getElementById('input_nama_kategori').value = nama;
 }
 
@@ -573,7 +684,9 @@ function formatRupiah(el) {
 }
 
 function formatMoney(n) {
-    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    if (!n) return '0';
+    let val = Math.round(n).toString();
+    return val.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
 // Auto-hide flash messages

@@ -10,3 +10,6 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 define('DB_NAME', 'tefa_bakery');
 define('DB_CHARSET', 'utf8mb4');
+
+// Set timezone to Asia/Jakarta
+date_default_timezone_set('Asia/Jakarta');

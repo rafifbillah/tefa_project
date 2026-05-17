@@ -7,6 +7,7 @@ Auth::requireRole('admin');
 
 require_once __DIR__ . '/../core/Flash.php';
 require_once __DIR__ . '/../models/LaporanModel.php';
+require_once __DIR__ . '/../config/IntegrationConfig.php';
 
 $laporanModel = new LaporanModel();
 
@@ -36,6 +37,23 @@ $additionalCSS = '../assets/css/admin-style_laporan.css';
 <?php include 'includes/sidebar.php'; ?>
 
     <div class="report-container">
+    
+    <!-- ═══ GOOGLE SHEETS QUICK LINK ═══ -->
+    <div class="action-header" style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 18px 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); margin-bottom: 5px; border-left: 5px solid #107c41;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="background: #e2f0d9; color: #107c41; width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;">
+                <i class="fa-solid fa-file-excel"></i>
+            </div>
+            <div>
+                <h4 style="margin: 0; font-size: 14px; font-weight: 800; color: #1e293b; letter-spacing: 0.3px; text-transform: uppercase;">Integrasi Google Spreadsheet</h4>
+                <p style="margin: 3px 0 0 0; font-size: 11px; color: #64748b; font-weight: 500; line-height: 1.4;">Pantau, olah, dan analisis laporan penjualan harian secara otomatis dan real-time di Google Sheets.</p>
+            </div>
+        </div>
+        <a href="<?= IntegrationConfig::GOOGLE_SHEETS_SPREADSHEET_URL ?>" target="_blank" class="btn-sheets" style="background: #107c41; color: white; padding: 10px 20px; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease-in-out; box-shadow: 0 4px 10px rgba(16, 124, 65, 0.2); letter-spacing: 0.5px;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> BUKA SPREADSHEET
+        </a>
+    </div>
+
     <!-- ═══ FILTER SECTION ═══ -->
     <section class="filter-card">
         <form class="filter-form" method="GET" action="">
@@ -101,22 +119,22 @@ $additionalCSS = '../assets/css/admin-style_laporan.css';
                 </thead>
                 <tbody>
                     <?php foreach($requestedBatches as $batch): ?>
-                    <tr id="req-batch-<?= $batch['user_id'] ?>-<?= $batch['tanggal'] ?>">
+                    <tr id="req-batch-<?= $batch['id_user'] ?>-<?= $batch['tanggal'] ?>">
                         <td><?= date('d/m/Y', strtotime($batch['tanggal'])) ?></td>
                         <td><?= htmlspecialchars($batch['kasir_nama']) ?></td>
                         <td><?= $batch['total_transaksi'] ?> TRX</td>
                         <td><strong>Rp <?= number_format($batch['total_pendapatan'], 0, ',', '.') ?></strong></td>
                         <td style="text-align: center;">
-                            <button type="button" onclick="openBatchModal(<?= $batch['user_id'] ?>, '<?= $batch['tanggal'] ?>', '<?= htmlspecialchars($batch['kasir_nama']) ?>')" class="btn-void" style="background:#f1f5f9; color:#475569; border-color:#cbd5e1; margin-right:4px;">
+                            <button type="button" onclick="openBatchModal(<?= $batch['id_user'] ?>, '<?= $batch['tanggal'] ?>', '<?= htmlspecialchars($batch['kasir_nama']) ?>')" class="btn-void" style="background:#f1f5f9; color:#475569; border-color:#cbd5e1; margin-right:4px;">
                                 <i class="fa-solid fa-eye"></i> Detail
                             </button>
 
                             <?php if (($batch['status_verifikasi'] ?? '') === 'requested'): ?>
-                                <button type="button" onclick="verifyBatchOnly(<?= $batch['user_id'] ?>, '<?= $batch['tanggal'] ?>')" class="btn-void" style="background:#dcfce7; color:#166534; border-color:#bbf7d0;">
+                                <button type="button" onclick="verifyBatchOnly(<?= $batch['id_user'] ?>, '<?= $batch['tanggal'] ?>')" class="btn-void" style="background:#dcfce7; color:#166534; border-color:#bbf7d0;">
                                     <i class="fa-solid fa-check"></i> Verifikasi
                                 </button>
                             <?php elseif (($batch['status_verifikasi'] ?? '') === 'verified'): ?>
-                                <button type="button" onclick="syncBatchToSheets(<?= $batch['user_id'] ?>, '<?= $batch['tanggal'] ?>')" class="btn-void" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">
+                                <button type="button" onclick="syncBatchToSheets(<?= $batch['id_user'] ?>, '<?= $batch['tanggal'] ?>')" class="btn-void" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">
                                     <i class="fa-solid fa-paper-plane"></i> Kirim Sheets
                                 </button>
                             <?php endif; ?>
@@ -166,9 +184,17 @@ $additionalCSS = '../assets/css/admin-style_laporan.css';
                                 <td><?= date('d/m/Y H:i', strtotime($t['created_at'])) ?></td>
                                 <td><?= htmlspecialchars($t['kasir_nama'] ?? ($t['kasir_username'] ?? 'System')) ?></td>
                                 <td>
-                                    <span class="badge <?= strtolower($t['metode_bayar']) ?>">
-                                        <?= strtoupper($t['metode_bayar']) ?>
-                                    </span>
+                                    <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+                                        <span class="badge <?= strtolower($t['metode_bayar']) ?>">
+                                            <?= strtoupper($t['metode_bayar']) ?>
+                                        </span>
+                                        <?php if (!empty($t['bukti_pembayaran'])): ?>
+                                            <button type="button" onclick="viewProof('../assets/img/bukti_bayar/<?= $t['bukti_pembayaran'] ?>')" 
+                                                    style="background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                                <i class="fa-solid fa-camera"></i> Bukti
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                                 <td><strong>Rp <?= number_format($t['total_harga'], 0, ',', '.') ?></strong></td>
                                 <td style="text-align: center;">
@@ -217,6 +243,22 @@ $additionalCSS = '../assets/css/admin-style_laporan.css';
         <h3 id="batchModalTitle" style="margin-top:0; color:#333; font-size:18px; margin-bottom:15px;">Detail Transaksi Shift</h3>
         <div id="batchModalBody">
             <p>Loading...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Bukti Pembayaran -->
+<div id="proofModal" style="display:none; position:fixed; inset:0; background:rgba(15, 23, 42, 0.7); z-index:99999; align-items:center; justify-content:center; backdrop-filter: blur(4px);">
+    <div style="background:#fff; width:90%; max-width:450px; border-radius:16px; padding:20px; position:relative; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+        <button onclick="closeProofModal()" style="position:absolute; top:15px; right:15px; background:#f1f5f9; border:none; width:30px; height:30px; border-radius:50%; cursor:pointer; color:#64748b;"><i class="fa-solid fa-times"></i></button>
+        <h3 style="margin-top:0; font-size:16px; color:#1e293b; margin-bottom:15px; font-weight:800;">BUKTI PEMBAYARAN</h3>
+        <div style="background:#f8fafc; border-radius:12px; padding:10px; border:1px solid #e2e8f0; margin-bottom:15px; text-align:center;">
+            <img id="proofImage" src="" style="max-width:100%; max-height:60vh; border-radius:8px; shadow: 0 4px 6px rgba(0,0,0,0.05);" alt="Bukti">
+        </div>
+        <div style="text-align:center;">
+            <a id="downloadProof" href="" download style="display:inline-flex; align-items:center; gap:8px; background:#2563eb; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:12px;">
+                <i class="fa-solid fa-download"></i> UNDUH GAMBAR
+            </a>
         </div>
     </div>
 </div>
@@ -314,7 +356,7 @@ async function verifyBatchOnly(userId, tanggal) {
         const res = await fetch('ajax_verify_batch_only.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-            body: JSON.stringify({ user_id: userId, tanggal: tanggal })
+            body: JSON.stringify({ id_user: userId, tanggal: tanggal })
         });
         const data = await res.json();
         alert(data.message);
@@ -328,7 +370,7 @@ async function syncBatchToSheets(userId, tanggal) {
         const res = await fetch('ajax_sync_batch.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-            body: JSON.stringify({ user_id: userId, tanggal: tanggal })
+            body: JSON.stringify({ id_user: userId, tanggal: tanggal })
         });
         const data = await res.json();
         alert(data.message);
@@ -342,7 +384,7 @@ async function openBatchModal(userId, tanggal, kasirNama) {
     document.getElementById('batchModalBody').innerHTML = '<p>Loading data...</p>';
     
     try {
-        const res = await fetch(`ajax_get_batch_details.php?user_id=${userId}&tanggal=${tanggal}`);
+        const res = await fetch(`ajax_get_batch_details.php?id_user=${userId}&tanggal=${tanggal}`);
         const html = await res.text();
         document.getElementById('batchModalBody').innerHTML = html;
     } catch (e) {
@@ -353,6 +395,23 @@ async function openBatchModal(userId, tanggal, kasirNama) {
 function closeBatchModal() {
     document.getElementById('batchModal').style.display = 'none';
 }
+
+function viewProof(path) {
+    document.getElementById('proofImage').src = path;
+    document.getElementById('downloadProof').href = path;
+    document.getElementById('proofModal').style.display = 'flex';
+}
+
+function closeProofModal() {
+    document.getElementById('proofModal').style.display = 'none';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === "Escape") {
+        closeBatchModal();
+        closeProofModal();
+    }
+});
 </script>
         
       </main>

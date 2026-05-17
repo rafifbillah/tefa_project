@@ -13,12 +13,12 @@ if (!Auth::verifyCsrfToken($csrf)) {
     exit;
 }
 
-if (!isset($data['user_id']) || !isset($data['tanggal'])) {
+if (!isset($data['id_user']) || !isset($data['tanggal'])) {
     echo json_encode(['success' => false, 'message' => 'Data tidak lengkap.']);
     exit;
 }
 
 $model = new LaporanModel();
-$success = $model->verifyBatch($data['user_id'], $data['tanggal']);
+$success = $model->verifyBatch($data['id_user'], $data['tanggal']);
 
 echo json_encode(['success' => $success, 'message' => $success ? 'Rekap shift berhasil diverifikasi.' : 'Gagal memverifikasi.']);

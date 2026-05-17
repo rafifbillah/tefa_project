@@ -11,8 +11,8 @@ try {
     $db = Database::getConnection();
     $stmt = $db->prepare("SELECT il.*, u.nama_lengkap 
                           FROM inventory_logs il 
-                          LEFT JOIN users u ON il.user_id = u.id 
-                          WHERE il.product_id = ? 
+                          LEFT JOIN users u ON il.id_user = u.id_user 
+                          WHERE il.id_produk = ? 
                           ORDER BY il.created_at DESC 
                           LIMIT 5");
     $stmt->execute([$id]);

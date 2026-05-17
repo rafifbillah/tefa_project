@@ -13,7 +13,7 @@ $selectedDate = isset($_GET['date']) && $_GET['date'] !== '' ? $_GET['date'] : n
 $method = isset($_GET['method']) ? strtolower($_GET['method']) : 'semua';
 $methodFilter = ($method === 'semua') ? null : $method;
 
-$userId = $_SESSION['user_id'];
+$userId = !empty($_SESSION['id_user']) ? (int) $_SESSION['id_user'] : 1;
 $transactions = $laporanModel->getTransactions($selectedDate, $selectedDate, $methodFilter, $userId);
 
 // Set Headers for Excel

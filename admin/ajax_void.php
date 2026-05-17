@@ -23,8 +23,8 @@ if (!$transactionId) {
 
 try {
     $model = new LaporanModel();
-    // Gunakan user_id dari sesi saat ini untuk log audit
-    $adminId = $_SESSION['user_id'] ?? 1;
+    // Gunakan id_user dari sesi saat ini untuk log audit
+    $adminId = $_SESSION['id_user'] ?? 1;
 
     $result = $model->voidTransaction($transactionId, $adminId);
 

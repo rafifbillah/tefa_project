@@ -12,7 +12,7 @@ require_once __DIR__ . '/../core/Flash.php';
 $userModel   = new UserModel();
 $users       = $userModel->getAll();
 $csrfToken   = Auth::generateCsrfToken();
-$currentUser = ['id' => 0];
+$currentUser = ['id_user' => $_SESSION['id_user'] ?? 0];
 
 $pageTitle = 'Users';
 $dashboardPage = true;
@@ -76,7 +76,7 @@ $pageHeading  = 'Manajemen User';
                             </td>
                             <td>
                                 <button class="btn-secondary" onclick="editUser(
-                                    <?= $u['id'] ?>, 
+                                    <?= $u['id_user'] ?>, 
                                     '<?= htmlspecialchars($u['username'], ENT_QUOTES) ?>', 
                                     '<?= htmlspecialchars($u['nama_lengkap'], ENT_QUOTES) ?>', 
                                     '<?= htmlspecialchars($u['role'], ENT_QUOTES) ?>',
@@ -85,13 +85,13 @@ $pageHeading  = 'Manajemen User';
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 
-                                <?php if ((int)$u['id'] !== (int)($currentUser['id'] ?? 0)): ?>
+                                <?php if ((int)$u['id_user'] !== (int)($currentUser['id_user'] ?? 0)): ?>
                                 <!-- Form Delete dengan CSRF -->
                                 <form method="POST" action="../controllers/AuthController.php"
                                       onsubmit="return confirm('Hapus user <?= htmlspecialchars($u['username'], ENT_QUOTES) ?>?')"
                                       style="display:inline;">
                                     <input type="hidden" name="action" value="delete_user">
-                                    <input type="hidden" name="user_id" value="<?= (int)$u['id'] ?>">
+                                    <input type="hidden" name="id_user" value="<?= (int)$u['id_user'] ?>">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                     <button type="submit" class="btn-danger-sm">
                                         <i class="fas fa-trash"></i>
@@ -117,11 +117,13 @@ $pageHeading  = 'Manajemen User';
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+            
+            <div id="modalAlerts"></div>
 
             <form method="POST" action="../controllers/AuthController.php" class="register-form" id="formUser" novalidate>
                 <!-- ─── SECURITY: CSRF Token ─── -->
                 <input type="hidden" name="action" id="formAction" value="register">
-                <input type="hidden" name="user_id" id="user_id" value="">
+                <input type="hidden" name="id_user" id="id_user" value="">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
 
                 <!-- Username -->
@@ -383,13 +385,18 @@ function toggleModal(id) {
     if (!modal) return;
     
     if (modal.style.display === 'none' || modal.style.display === '') {
+        // Clear alerts
+        const modalAlerts = document.getElementById('modalAlerts');
+        if (modalAlerts) modalAlerts.innerHTML = '';
+        
         // Reset form for Add User
         document.getElementById('formUser').reset();
         document.getElementById('formAction').value = 'register';
-        document.getElementById('user_id').value = '';
+        document.getElementById('id_user').value = '';
         
         document.getElementById('reg_username').readOnly = false;
         document.getElementById('reg_password').required = true;
+        document.getElementById('reg_password').oninput = null; // Reset custom listener
         document.getElementById('reg_confirm').required = true;
         document.getElementById('label_password').innerHTML = 'Password <span class="required">*</span>';
         document.getElementById('hint_password').style.display = 'none';
@@ -410,7 +417,7 @@ function editUser(id, username, nama, role, status) {
     const modal = document.getElementById('modalUser');
     
     document.getElementById('formAction').value = 'update_user';
-    document.getElementById('user_id').value = id;
+    document.getElementById('id_user').value = id;
     
     document.getElementById('reg_username').value = username;
     document.getElementById('reg_username').readOnly = true; // Prevent changing username
@@ -419,14 +426,37 @@ function editUser(id, username, nama, role, status) {
     document.getElementById('reg_role').value = role;
     document.getElementById('reg_status').value = status;
     
+    // Clear password fields first
+    const passInput = document.getElementById('reg_password');
+    const confirmInput = document.getElementById('reg_confirm');
+    passInput.value = '';
+    confirmInput.value = '';
+    
     // Optional password fields for update
-    document.getElementById('reg_password').required = false;
-    document.getElementById('reg_confirm').required = false;
+    passInput.required = false;
+    confirmInput.required = false;
     document.getElementById('label_password').innerHTML = 'Password Baru (Opsional)';
     document.getElementById('hint_password').style.display = 'block';
-    document.getElementById('group_confirm').style.display = 'none'; // Konfirmasi tidak diwajibkan saat update dari admin jika tidak ganti pass
+    
+    // Hide confirm group initially for edit
+    const groupConfirm = document.getElementById('group_confirm');
+    groupConfirm.style.display = 'none';
+    
+    // Show confirm group only if password is typed
+    passInput.oninput = function() {
+        if (this.value.trim().length > 0) {
+            groupConfirm.style.display = 'block';
+        } else {
+            groupConfirm.style.display = 'none';
+            confirmInput.value = '';
+        }
+    };
     
     document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-edit"></i> Edit User';
+    
+    // Clear alerts
+    const modalAlerts = document.getElementById('modalAlerts');
+    if (modalAlerts) modalAlerts.innerHTML = '';
     
     modal.style.display = 'flex';
 }
@@ -463,6 +493,40 @@ setTimeout(function() {
         setTimeout(() => el.remove(), 500);
     });
 }, 5000);
+
+// AJAX Form Submission
+document.getElementById('formUser').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = this.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    btn.disabled = true;
+
+    const formData = new FormData(this);
+    formData.append('ajax', '1');
+    const alertsDiv = document.getElementById('modalAlerts');
+    alertsDiv.innerHTML = '';
+
+    fetch('../controllers/AuthController.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        if (data.status === 'error') {
+            alertsDiv.innerHTML = `<div class="alert alert-error" style="margin-bottom:16px;"><i class="fas fa-exclamation-circle"></i> ${data.message}</div>`;
+        } else {
+            window.location.reload();
+        }
+    })
+    .catch(err => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alertsDiv.innerHTML = `<div class="alert alert-error" style="margin-bottom:16px;"><i class="fas fa-exclamation-triangle"></i> Terjadi kesalahan jaringan.</div>`;
+    });
+});
 </script>
 
 <?php include 'includes/footer.php'; ?>

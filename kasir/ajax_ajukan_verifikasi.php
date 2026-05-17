@@ -19,7 +19,7 @@ if (!isset($data['tanggal'])) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
+$userId = !empty($_SESSION['id_user']) ? (int) $_SESSION['id_user'] : 1;
 $tanggal = $data['tanggal'];
 
 $laporanModel = new LaporanModel();

@@ -21,11 +21,11 @@ class AuthSecurity
     public static function verifyCsrfToken(string $token): bool
     {
         $stored = $_SESSION['csrf_token'] ?? '';
-        if (!hash_equals($stored, $token)) {
-            Flash::set('error', 'Request tidak valid (CSRF). Silakan refresh halaman.');
+        if (empty($stored) || !hash_equals($stored, $token)) {
             return false;
         }
-        unset($_SESSION['csrf_token']);
+        // Jangan unset token di sini agar bisa digunakan kembali oleh AJAX 
+        // tanpa harus refresh halaman penuh.
         return true;
     }
 

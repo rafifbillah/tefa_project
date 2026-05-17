@@ -3,7 +3,7 @@ require_once '../core/Auth.php';
 Auth::requireRole('admin');
 require_once '../models/LaporanModel.php';
 
-$userId = $_GET['user_id'] ?? 0;
+$userId = $_GET['id_user'] ?? 0;
 $tanggal = $_GET['tanggal'] ?? '';
 
 if (!$userId || !$tanggal) {

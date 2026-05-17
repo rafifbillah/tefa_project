@@ -13,6 +13,10 @@ $current_page = strtolower(basename($_SERVER['PHP_SELF']));
                 <span class="role">BAKERY AND COFFEE</span>
             </div>
         </div>
+        <!-- Close button for mobile -->
+        <button onclick="toggleSidebar()" class="lg:hidden w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
+            <i class="fa-solid fa-xmark text-white"></i>
+        </button>
     </div>
     
     <nav class="sidebar-nav">

@@ -11,8 +11,8 @@ class InventoryLogModel {
     public function getAll($filters = []) {
         $sql = "SELECT il.*, p.sku, p.nama_produk, u.nama_lengkap as petugas
                 FROM inventory_logs il
-                JOIN products p ON il.product_id = p.id
-                LEFT JOIN users u ON il.user_id = u.id
+                JOIN products p ON il.id_produk = p.id_produk
+                LEFT JOIN users u ON il.id_user = u.id_user
                 WHERE 1=1";
         $params = [];
 

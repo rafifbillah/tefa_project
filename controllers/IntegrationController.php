@@ -13,7 +13,7 @@ class IntegrationController {
         // Ambil data transaksi
         $sql = "SELECT t.*, u.nama_lengkap as kasir_nama 
                 FROM transactions t 
-                LEFT JOIN users u ON t.user_id = u.id 
+                LEFT JOIN users u ON t.id_user = u.id_user 
                 WHERE t.id = :id";
         $db = Database::getConnection();
         $stmt = $db->prepare($sql);
@@ -91,7 +91,7 @@ class IntegrationController {
         }
 
         $db = Database::getConnection();
-        $stmt = $db->prepare("SELECT nama_lengkap FROM users WHERE id = ?");
+        $stmt = $db->prepare("SELECT nama_lengkap FROM users WHERE id_user = ?");
         $stmt->execute([$userId]);
         $kasir = $stmt->fetchColumn() ?: 'System';
 

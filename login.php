@@ -109,17 +109,6 @@ $basePath = 'admin/';
               <span id="passwordHelp" class="input-help">Min. 4 karakter</span>
             </div>
 
-
-            <!-- Remember Me & Forgot Password -->
-            <div class="form-extras">
-              <label class="remember-me">
-                <input type="checkbox" id="rememberMe" name="remember" />
-                <span class="checkmark"></span>
-                <span>Ingat saya</span>
-              </label>
-              <a href="#" class="forgot-password">Lupa password?</a>
-            </div>
-
             <!-- Submit Button -->
             <button type="submit" class="login-btn" id="loginBtn">
               <span class="btn-text">LOGIN</span>

@@ -12,7 +12,7 @@ $barangModel = new BarangModel();
 $shiftManager = new ShiftManager();
 $db = Database::getConnection();
 
-$userId = $_SESSION['user_id'];
+$userId = !empty($_SESSION['id_user']) ? (int) $_SESSION['id_user'] : 1;
 $activeShift = $shiftManager->getActiveShift($userId);
 
 // 1. Shift Handling & Summary Stats
@@ -65,11 +65,11 @@ for ($i = 6; $i >= 0; $i--) {
 $stmt = $db->query("
     SELECT c.nama_kategori, SUM(td.jumlah * td.harga_satuan) as total
     FROM transaction_details td
-    JOIN products p ON td.product_id = p.id
-    LEFT JOIN categories c ON p.category_id = c.id
+    JOIN products p ON td.id_produk = p.id_produk
+    LEFT JOIN categories c ON p.id_kategori = c.id_kategori
     JOIN transactions t ON td.transaction_id = t.id
     WHERE t.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND (t.status != 'void' OR t.status IS NULL)
-    GROUP BY p.category_id
+    GROUP BY p.id_kategori
 ");
 $kategoriSales = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -115,7 +115,7 @@ include 'includes/header.php';
     
     <?php include 'includes/topbar.php'; ?>
 
-    <div class="max-w-7xl mx-auto px-8 pb-8 mt-6">
+    <div class="max-w-7xl mx-auto px-4 lg:px-10 py-6 lg:py-10">
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100 text-center relative overflow-hidden group">
@@ -140,15 +140,15 @@ include 'includes/header.php';
                 </p>
             </div>
             
-            <a href="barang.php" class="block bg-gradient-to-br from-red-50 to-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-red-100 text-center relative overflow-hidden group cursor-pointer">
+            <div onclick="openStockModal()" class="bg-gradient-to-br from-red-50 to-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-red-100 text-center relative overflow-hidden group cursor-pointer">
                 <h3 class="text-red-500 text-xs font-bold mb-3 uppercase tracking-widest relative z-10">Peringatan Restock</h3>
                 <p class="text-4xl font-black text-red-600 mb-2 relative z-10"><?= $lowStockCount ?></p>
                 <p class="text-sm text-red-600 font-bold flex items-center justify-center gap-1 relative z-10"><i class="fa-solid fa-triangle-exclamation"></i> Menu Menipis</p>
-            </a>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 lg:col-span-2">
+            <div class="bg-white p-6 lg:p-8 rounded-2xl shadow-sm border border-gray-100 lg:col-span-2">
                 <div class="flex justify-between items-center mb-8">
                     <div>
                         <h3 class="text-xl font-black text-gray-900 tracking-tight">Grafik Penjualan</h3>
@@ -161,7 +161,7 @@ include 'includes/header.php';
                 </div>
             </div>
 
-            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+            <div class="bg-white p-6 lg:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                 <div class="flex justify-between items-center mb-8">
                     <h3 class="text-xl font-black text-gray-900 tracking-tight">Butuh Restock</h3>
                     <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
@@ -173,7 +173,7 @@ include 'includes/header.php';
                         <p class="text-center text-gray-500 text-sm mt-10">Semua stok aman.</p>
                     <?php else: ?>
                         <?php foreach($lowStockDisplay as $item): ?>
-                        <div class="flex justify-between items-center p-4 bg-gray-50/50 hover:bg-orange-50/50 transition-colors rounded-xl border border-gray-100 cursor-pointer group">
+                        <div onclick="openStockModal()" class="flex justify-between items-center p-4 bg-gray-50/50 hover:bg-orange-50/50 transition-colors rounded-xl border border-gray-100 cursor-pointer group">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-lg bg-gray-200 group-hover:bg-orange-200 transition-colors flex items-center justify-center text-xl font-bold text-gray-400 group-hover:text-orange-600">
                                     <?= strtoupper(substr($item['nama_produk'], 0, 1)) ?>
@@ -252,7 +252,7 @@ include 'includes/header.php';
             </div>
         </div>
 
-        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row items-center gap-12 lg:gap-24">
+        <div class="bg-white p-6 lg:p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row items-center gap-8 lg:gap-24">
             <div class="w-64 h-64 relative flex-shrink-0">
                 <canvas id="donutChart"></canvas>
                 <div class="absolute inset-0 flex items-center justify-center flex-col">

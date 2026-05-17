@@ -44,25 +44,11 @@ foreach ($paymentStats as $method => $count) {
     $paymentData[] = $percentage;
 }
 
-// Persiapkan data untuk Line Chart (7 hari terakhir)
-$salesData = [];
-$salesLabels = [];
-for ($i = 6; $i >= 0; $i--) {
-    $date = date('Y-m-d', strtotime("-$i days"));
-    $salesLabels[] = date('d M', strtotime($date));
-    $salesData[$date] = 0;
-}
-
-foreach ($transactions as $trx) {
-    // Abaikan jika ada status void
-    if (isset($trx['status']) && $trx['status'] === 'void') continue;
-    
-    $date = date('Y-m-d', strtotime($trx['created_at']));
-    if (isset($salesData[$date])) {
-        $salesData[$date] += (float)$trx['total_harga'];
-    }
-}
-$chartData = array_values($salesData);
+// Ambil data statistik untuk grafik (default: week)
+$chartStats = $laporanModel->getChartStats('week');
+$chartData = $chartStats['data'];
+$chartLabels = $chartStats['labels'];
+$totalPendapatanGrafik = $chartStats['total'];
 
 $dashboardData = [
     'paymentMethods' => [
@@ -70,7 +56,7 @@ $dashboardData = [
         'data' => $paymentData
     ],
     'salesChart' => [
-        'labels' => $salesLabels,
+        'labels' => $chartLabels,
         'data' => $chartData
     ]
 ];
@@ -143,7 +129,7 @@ $dashboardData = [
             <div class="chart-content">
               <p class="balance-label">Total Balance</p>
               <h3 class="balance-amount">
-                Rp <span class="counter" data-target="<?= htmlspecialchars($totalPendapatan) ?>">0</span>
+                Rp <span class="counter" data-target="<?= htmlspecialchars($totalPendapatanGrafik) ?>">0</span>
               </h3>
               <div class="chart-wrapper">
                 <canvas id="salesLineChart" aria-label="Sales Statistics Chart"></canvas>
@@ -184,8 +170,13 @@ $dashboardData = [
                 <tr>
                   <td>
                     <div class="prod-info">
-                      <div class="prod-img-wrapper">
-                        <img src="https://images.unsplash.com/photo-1558303035-d41300b031b6?w=80&h=80&fit=crop" alt="<?= htmlspecialchars($product['nama_produk']) ?>" loading="lazy" />
+                      <div class="prod-img-wrapper" style="position:relative;">
+                        <div class="img-placeholder-admin" style="width:100%; height:100%; font-size:1.2rem; display:flex; align-items:center; justify-content:center;">
+                          <i class="fas fa-bread-slice"></i>
+                        </div>
+                        <?php if (!empty($product['image']) && $product['image'] !== 'default_product.jpg'): ?>
+                          <img src="../assets/img/products/<?= htmlspecialchars($product['image']) ?>" alt="<?= htmlspecialchars($product['nama_produk']) ?>" loading="lazy" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; display:none;" onload="this.style.display='block'; this.previousElementSibling.style.display='none';">
+                        <?php endif; ?>
                       </div>
                       <span><?= htmlspecialchars($product['nama_produk']) ?></span>
                     </div>
@@ -204,6 +195,35 @@ $dashboardData = [
           </div>
         </section>
       </main>
+    </div>
+
+    <!-- ═══ MODAL: Semua Produk Terlaris ═══ -->
+    <div id="modalBestSellers" class="modal-overlay" role="dialog" aria-modal="true">
+        <div class="modal-box" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-trophy"></i> Semua Produk Terlaris</h3>
+                <button class="modal-close" onclick="document.getElementById('modalBestSellers').style.display='none'">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 20px; max-height: 70vh; overflow-y: auto;">
+                <div class="table-responsive">
+                    <table class="custom-table" id="tableAllBestSellers">
+                        <thead>
+                            <tr>
+                                <th>Ranking</th>
+                                <th>Produk</th>
+                                <th>Terjual</th>
+                                <th>Total Pendapatan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
 <script>

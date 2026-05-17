@@ -21,7 +21,7 @@ if ($dateParam === 'all') {
 }
 
 // Eksekusi query model
-$userId = $_SESSION['user_id'];
+$userId = !empty($_SESSION['id_user']) ? (int) $_SESSION['id_user'] : 1;
 $transactions = $laporanModel->getTransactions($selectedDate, $selectedDate, $methodFilter, $userId);
 $stats = $laporanModel->getSummaryStats($selectedDate, $selectedDate, $methodFilter, $userId);
 
@@ -65,7 +65,7 @@ include 'includes/header.php';
     }
 
     @media print {
-        aside, header.main-header, .no-print, #print-btn, .filter-container, .export-btns, button, .bg-blue-600, .bg-[#e8f5e9] {
+        aside, header.main-header, .no-print, #print-btn, .filter-container, .export-btns, button, .bg-blue-600, .bg-[e8f5e9] {
             display: none !important;
         }
         main {
@@ -176,7 +176,14 @@ include 'includes/header.php';
                 </button>
                 <?php endif; ?>
 
-                <a href="export_excel.php?<?= http_build_query($_GET) ?>" class="bg-[#e8f5e9] text-[#2e7d32] px-6 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 hover:bg-[#c8e6c9] transition-all duration-300 shadow-sm active:scale-95">
+                <?php 
+                    $isExcelDisabled = empty($transactions);
+                    $excelClass = $isExcelDisabled 
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed pointer-events-none opacity-60" 
+                        : "bg-[#e8f5e9] text-[#2e7d32] hover:bg-[#c8e6c9] active:scale-95 shadow-sm";
+                ?>
+                <a href="<?= $isExcelDisabled ? '#' : 'export_excel.php?' . http_build_query($_GET) ?>" 
+                   class="<?= $excelClass ?> px-6 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 transition-all duration-300">
                     <i class="fa-solid fa-file-excel"></i> EXCEL
                 </a>
             </div>
@@ -301,9 +308,16 @@ include 'includes/header.php';
                                     </div>
                                 </td>
                                 <td class="py-6 px-8">
-                                    <span class="<?= $badgeStyle ?> px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-sm">
-                                        <?= $metode ?>
-                                    </span>
+                                    <div class="flex flex-col gap-2 items-start">
+                                        <span class="<?= $badgeStyle ?> px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-sm">
+                                            <?= $metode ?>
+                                        </span>
+                                        <?php if (!empty($trx['bukti_pembayaran'])): ?>
+                                            <button onclick="viewProof('../assets/img/bukti_bayar/<?= $trx['bukti_pembayaran'] ?>')" class="mt-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all border border-blue-200 flex items-center gap-1.5 shadow-sm">
+                                                <i class="fa-solid fa-camera"></i> Bukti Bayar
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
                                 </td>
                                 <td class="py-6 px-8 text-right">
                                     <span class="text-lg font-black text-gray-900 tracking-tight">
@@ -379,7 +393,33 @@ include 'includes/header.php';
     </div>
 </div>
 
+<!-- ═══ MODAL BUKTI PEMBAYARAN ═══ -->
+<div id="proofModal" class="modal-overlay" onclick="closeProofModal()">
+    <div class="modal-box !max-w-md" onclick="event.stopPropagation()">
+        <div class="modal-header border-none pb-0">
+            <div>
+                <h3 class="text-xl font-black text-gray-900">Bukti Pembayaran</h3>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Dokumen Transaksi Digital</p>
+            </div>
+            <button onclick="closeProofModal()" class="w-10 h-10 rounded-full bg-gray-50 text-gray-400 hover:bg-gray-100 transition-all flex items-center justify-center">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body p-6 text-center" style="max-height: 80vh;">
+            <div class="bg-gray-50 rounded-2xl p-2 border border-gray-100 overflow-hidden mb-4">
+                <img id="proofImage" src="" class="w-full rounded-xl shadow-sm object-contain max-h-[60vh]" alt="Bukti Pembayaran">
+            </div>
+            <div class="flex justify-center">
+                <a id="downloadProof" href="" download class="bg-blue-50 text-blue-600 px-6 py-3 rounded-2xl font-bold text-[10px] flex items-center gap-2 hover:bg-blue-100 transition-all uppercase tracking-widest">
+                    <i class="fa-solid fa-download"></i> UNDUH GAMBAR
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+
 function openDetailModal(trxId, time, date, method, total, items, badgeStyle) {
     document.getElementById('modalTrxId').innerText = '#' + trxId;
     document.getElementById('modalTrxTime').innerText = date + ' • ' + time;
@@ -420,8 +460,21 @@ const csrfToken = "<?= Auth::generateCsrfToken() ?>";
 
 // Tutup modal dengan tombol Escape
 document.addEventListener('keydown', function(event) {
-    if (event.key === "Escape") closeDetailModal();
+    if (event.key === "Escape") {
+        closeDetailModal();
+        closeProofModal();
+    }
 });
+
+function viewProof(imagePath) {
+    document.getElementById('proofImage').src = imagePath;
+    document.getElementById('downloadProof').href = imagePath;
+    document.getElementById('proofModal').style.display = 'flex';
+}
+
+function closeProofModal() {
+    document.getElementById('proofModal').style.display = 'none';
+}
 
 async function ajukanRekapHarian(tanggal) {
     if (!confirm('Apakah Anda yakin ingin menutup shift dan mengajukan seluruh transaksi hari ini ke Admin?')) return;

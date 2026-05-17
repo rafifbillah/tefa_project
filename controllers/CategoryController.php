@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
 
         case 'update_category':
-            $id = $_POST['category_id'];
+            $id = $_POST['id_kategori'];
             $nama = $_POST['nama_kategori'] ?? '';
             if ($categoryModel->update($id, $nama)) {
                 Flash::set('success', 'Kategori berhasil diperbarui.');
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
 
         case 'delete_category':
-            $id = $_POST['category_id'];
+            $id = $_POST['id_kategori'];
             if ($categoryModel->delete($id)) {
                 Flash::set('success', 'Kategori telah dihapus.');
             } else {

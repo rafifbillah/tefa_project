@@ -26,6 +26,20 @@ try {
     // Gunakan id_user dari sesi saat ini untuk log audit
     $adminId = $_SESSION['id_user'] ?? 1;
 
+    // Self-healing: jika adminId = 0 akibat session lama yang belum logout
+    if (empty($adminId) && !empty($_SESSION['username'])) {
+        $db = Database::getConnection();
+        $stmt = $db->prepare("SELECT id_user FROM users WHERE username = ?");
+        $stmt->execute([$_SESSION['username']]);
+        $u = $stmt->fetch();
+        if ($u) {
+            $adminId = $u['id_user'];
+            $_SESSION['id_user'] = $adminId; // Perbaiki sesi secara otomatis
+        } else {
+            $adminId = 1; // Fallback darurat
+        }
+    }
+
     $result = $model->voidTransaction($transactionId, $adminId);
 
     if ($result['success']) {

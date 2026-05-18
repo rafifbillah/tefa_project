@@ -61,7 +61,7 @@ class AuthService
 
         session_regenerate_id(true);
 
-        $_SESSION['id_user']      = (int) $user['id_user'];
+        $_SESSION['id_user']      = (int) $user['id'];
         $_SESSION['username']     = $user['username'];
         $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
         $_SESSION['role']         = $user['role'];

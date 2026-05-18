@@ -27,3 +27,5 @@ define('DB_CHARSET', 'utf8mb4');
 
 // Set timezone to Asia/Jakarta
 date_default_timezone_set('Asia/Jakarta');
+
+// Trigger auto-deploy after setting GitHub Secrets

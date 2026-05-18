@@ -84,7 +84,7 @@ body {
    ======================================== */
 .left-panel {
   flex: 1;
-  background: url("../../assets/img/tefaroti.jpg") no-repeat center center/cover;
+  background: url("../../assets/img/tefaroti.JPG") no-repeat center center/cover;
   position: relative;
   display: flex;
   align-items: flex-end;

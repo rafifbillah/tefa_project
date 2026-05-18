@@ -448,7 +448,6 @@ include 'includes/header.php';
         </div>
     </div>
 
-<<<<<<< HEAD
     <!-- Modal Lihat Detail Batch -->
     <div class="modal-overlay" id="batchesModal">
         <div class="modal-content" style="max-width: 650px;">
@@ -462,96 +461,6 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <style>
-        .product-img-wrapper {
-            width: 45px;
-            height: 45px;
-            background: #f1f5f9;
-            border-radius: 8px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #e2e8f0;
-        }
-        .product-img-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .foto-placeholder-small {
-            color: #cbd5e1;
-            font-size: 1.2rem;
-        }
-        .action-buttons-wrapper {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .history-btn-small, .edit-btn-small {
-            background: white; 
-            border: 1px solid #e2e8f0; 
-            padding: 6px 10px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            color: #64748b; 
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .history-btn-small:hover { 
-            background: #f0f9ff; 
-            color: #0369a1; 
-            border-color: #0369a1;
-            transform: translateY(-1px);
-        }
-        .batch-btn-small {
-            background: white; 
-            border: 1px solid #e2e8f0; 
-            padding: 6px 10px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            color: #6366f1; 
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .batch-btn-small:hover { 
-            background: #e0e7ff; 
-            color: #4f46e5; 
-            border-color: #4f46e5;
-            transform: translateY(-1px);
-        }
-        .opname-btn-small {
-            background: white; 
-            border: 1px solid #e2e8f0; 
-            padding: 6px 10px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            color: #10b981; 
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .opname-btn-small:hover { 
-            background: #ecfdf5; 
-            color: #059669; 
-            border-color: #059669;
-            transform: translateY(-1px);
-        }
-        .edit-btn-small:hover { 
-            background: #fff7ed; 
-            color: #ea580c; 
-            border-color: #ea580c;
-            transform: translateY(-1px);
-        }
-        .status-label { font-size: 10px; padding: 3px 10px; border-radius: 12px; color: white; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-        .status-green { background-color: #10b981; }
-        .status-orange { background-color: #f59e0b; }
-        .status-red { background-color: #ef4444; }
-        .btn-submit-modal { background: #d4832c; color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-submit-modal:hover { background: #2b1b17; }
-        
-        /* Fix Table Alignment */
-        .inventory-table td { vertical-align: middle; }
-    </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const addModal = document.getElementById('addModal');

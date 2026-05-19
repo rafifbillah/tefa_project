@@ -211,7 +211,6 @@ function renderCart() {
             </div>`;
     footer?.classList.add("hidden");
     updateProductCardsVisuals();
-    checkPaymentRules();
     return;
   }
 
@@ -250,7 +249,6 @@ function renderCart() {
   // Update kembalian jika input sudah ada
   updateChange();
   updateProductCardsVisuals();
-  checkPaymentRules();
 }
 
 /**
@@ -287,39 +285,10 @@ function updateProductCardsVisuals() {
 // ─── Pembayaran ───────────────────────────────────────────────────────────────
 
 /**
- * Cek aturan bisnis pembayaran.
- */
-function checkPaymentRules() {
-  const total = getCartTotal();
-  const qrisBtn = document.getElementById("pay-qris");
-
-  if (total > 500000) {
-    if (paymentMethod === "qris") {
-      selectPayment("transfer");
-    }
-    if (qrisBtn) {
-      qrisBtn.classList.add("opacity-50", "cursor-not-allowed");
-      qrisBtn.disabled = true;
-    }
-  } else {
-    if (qrisBtn) {
-      qrisBtn.classList.remove("opacity-50", "cursor-not-allowed");
-      qrisBtn.disabled = false;
-    }
-  }
-}
-
-/**
  * Pilih metode pembayaran. Dipanggil dari onclick tombol metode.
  * @param {string} method - 'tunai' | 'qris' | 'transfer'
  */
 function selectPayment(method) {
-  const total = getCartTotal();
-  if (total > 500000 && method === 'qris') {
-    showToast('Transaksi di atas Rp 500.000 tidak bisa menggunakan QRIS', 'error');
-    return;
-  }
-
   paymentMethod = method;
 
   // Update styling tombol

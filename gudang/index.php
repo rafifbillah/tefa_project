@@ -76,7 +76,7 @@ foreach ($allProducts as $p) {
     $totalCategoryStock += $p['stok'];
 }
 
-$donutColors = ['var(--orange)', 'var(--orange-memek)', 'var(--grey-mid)', '#10B981', '#3B82F6', '#EF4444'];
+$donutColors = ['var(--orange)', 'var(--grey-mid)', 'var(--pink)'];
 $donutGradientParts = [];
 $donutLegendHTML = '';
 $jsGradientMap = [];

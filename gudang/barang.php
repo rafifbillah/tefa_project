@@ -332,8 +332,6 @@ include 'includes/header.php';
         </table>
 
         <div class="table-footer">
-            <button class="add-btn" id="openAddModalBtn"><i class="fa-solid fa-plus"></i> Update Stok</button>
-            <button class="print-btn" onclick="window.location.href='laporan.php'"><i class="fa-solid fa-file-lines"></i> Laporan Mutasi</button>
             <?= $paginator->render('barang.php', 'barang') ?>
         </div>
     </div>
@@ -467,14 +465,16 @@ include 'includes/header.php';
             const openAddModalBtn = document.getElementById('openAddModalBtn');
             const closeModalBtn = document.getElementById('closeModalBtn');
 
-            openAddModalBtn.addEventListener('click', () => {
-                document.getElementById('modalTitle').innerText = 'Update Stok Barang';
-                document.getElementById('modal_id_produk').value = '';
-                const select = document.getElementById('modal_product_select');
-                select.disabled = false;
-                select.value = '';
-                addModal.classList.add('active');
-            });
+            if (openAddModalBtn) {
+                openAddModalBtn.addEventListener('click', () => {
+                    document.getElementById('modalTitle').innerText = 'Update Stok Barang';
+                    document.getElementById('modal_id_produk').value = '';
+                    const select = document.getElementById('modal_product_select');
+                    select.disabled = false;
+                    select.value = '';
+                    addModal.classList.add('active');
+                });
+            }
 
             closeModalBtn.addEventListener('click', () => addModal.classList.remove('active'));
             addModal.addEventListener('click', (e) => { if (e.target === addModal) addModal.classList.remove('active'); });

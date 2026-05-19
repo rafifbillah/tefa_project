@@ -4,6 +4,7 @@
     padding: 20px;
     border-radius: 12px;
     border: 1px solid var(--grey-light);
+    overflow-x: auto;
 }
 
 .table-controls {
@@ -130,10 +131,12 @@
 
 .modal-content {
     background-color: var(--white);
-    width: 700px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    overflow: hidden;
+    overflow-y: auto;
     transform: translateY(20px);
     transition: transform 0.3s ease;
 }

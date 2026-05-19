@@ -71,9 +71,9 @@ include 'includes/header.php';
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="products-grid">
+            <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6" id="products-grid">
                 <?php foreach($productsFromDB as $p): ?>
-                <div class="product-card bg-white p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer active:scale-95 group <?= $p['stok'] < 1 ? 'pointer-events-none opacity-60' : '' ?>" 
+                <div class="product-card bg-white p-3 sm:p-4 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer active:scale-95 group <?= $p['stok'] < 1 ? 'pointer-events-none opacity-60' : '' ?>" 
                      id="product-card-<?= $p['id_produk'] ?>"
                      data-stok-asal="<?= $p['stok'] ?>"
                      data-kategori="<?= $p['id_kategori'] ?>" 
@@ -83,19 +83,19 @@ include 'includes/header.php';
                             <img src="../assets/img/products/<?= $p['image'] ?>" class="w-full h-full object-cover">
                         <?php else: ?>
                             <div class="text-gray-300 flex flex-col items-center">
-                                <i class="fa-solid fa-image text-4xl mb-2"></i>
-                                <span class="text-[10px] font-bold uppercase tracking-widest">No Image</span>
+                                <i class="fa-solid fa-image text-3xl sm:text-4xl mb-2"></i>
+                                <span class="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest">No Image</span>
                             </div>
                         <?php endif; ?>
                         
                         <div class="badge-habis absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center <?= $p['stok'] < 1 ? '' : 'hidden' ?>">
-                            <span class="text-white font-bold px-4 py-2 bg-red-600 rounded-full text-xs shadow-lg uppercase tracking-wider">Habis</span>
+                            <span class="text-white font-bold px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 rounded-full text-[10px] sm:text-xs shadow-lg uppercase tracking-wider">Habis</span>
                         </div>
                     </div>
-                    <h4 class="font-bold text-gray-800 text-lg group-hover:text-[#D97706] transition"><?= htmlspecialchars($p['nama_produk']) ?></h4>
-                    <div class="flex justify-between items-center mt-1">
-                        <p class="text-[#D97706] font-bold text-xl">Rp <?= number_format($p['harga'], 0, ',', '.') ?></p>
-                        <span class="stock-label text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-md font-bold">STOK: <?= $p['stok'] ?></span>
+                    <h4 class="font-bold text-gray-800 text-sm sm:text-base md:text-lg group-hover:text-[#D97706] transition leading-tight"><?= htmlspecialchars($p['nama_produk']) ?></h4>
+                    <div class="flex justify-between items-center mt-2 flex-wrap gap-1">
+                        <p class="text-[#D97706] font-bold text-base sm:text-lg md:text-xl">Rp <?= number_format($p['harga'], 0, ',', '.') ?></p>
+                        <span class="stock-label text-[9px] sm:text-[10px] bg-gray-100 text-gray-500 px-2 py-1 rounded-md font-bold">STOK: <?= $p['stok'] ?></span>
                     </div>
                 </div>
                 <?php endforeach; ?>

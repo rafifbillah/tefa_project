@@ -92,11 +92,11 @@ $basePath = 'admin/';
                   name="password"
                   placeholder=" "
                   required
-                  minlength="4"
+                  minlength="6"
                   autocomplete="current-password"
                   aria-describedby="passwordHelp"
                 />
-                <label for="password">Password</label>
+                <label for="password">Password </label>
                 <button
                   type="button"
                   class="toggle-password"
@@ -106,7 +106,6 @@ $basePath = 'admin/';
                   <i class="far fa-eye" aria-hidden="true"></i>
                 </button>
               </div>
-              <span id="passwordHelp" class="input-help">Min. 4 karakter</span>
             </div>
 
             <!-- Submit Button -->
@@ -123,7 +122,7 @@ $basePath = 'admin/';
 
           <!-- Footer Note -->
           <p class="login-footer">
-            &copy; 2024 TEFA Bakery and Coffee. All rights reserved.
+            &copy; 2026 TEFA Bakery and Coffee. All rights reserved.
           </p>
         </div>
       </div>

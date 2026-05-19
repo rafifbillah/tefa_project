@@ -29,8 +29,12 @@ class InventoryLogModel {
             $params[':tipe'] = strtolower($filters['tipe']);
         }
         if (!empty($filters['search'])) {
-            $sql .= " AND (p.nama_produk LIKE :search OR p.sku LIKE :search)";
-            $params[':search'] = '%' . $filters['search'] . '%';
+            // Ubah :search menjadi dua nama parameter yang berbeda
+            $sql .= " AND (p.nama_produk LIKE :search_nama OR p.sku LIKE :search_sku)";
+            
+            // Masukkan nilai untuk masing-masing parameter
+            $params[':search_nama'] = '%' . $filters['search'] . '%';
+            $params[':search_sku']  = '%' . $filters['search'] . '%';
         }
 
         $sql .= " ORDER BY il.created_at DESC";

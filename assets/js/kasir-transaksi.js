@@ -165,7 +165,7 @@ function setQuantity(id, value) {
   if (!item) return;
 
   let qty = parseInt(value, 10) || 0;
-  
+
   if (qty > item.stok) {
     showToast(`Stok tidak mencukupi (Maks: ${item.stok})`, "error");
     qty = item.stok;
@@ -211,6 +211,7 @@ function renderCart() {
             </div>`;
     footer?.classList.add("hidden");
     updateProductCardsVisuals();
+    checkPaymentRules();
     return;
   }
 
@@ -249,6 +250,7 @@ function renderCart() {
   // Update kembalian jika input sudah ada
   updateChange();
   updateProductCardsVisuals();
+  checkPaymentRules();
 }
 
 /**
@@ -285,10 +287,39 @@ function updateProductCardsVisuals() {
 // ─── Pembayaran ───────────────────────────────────────────────────────────────
 
 /**
+ * Cek aturan bisnis pembayaran.
+ */
+function checkPaymentRules() {
+  const total = getCartTotal();
+  const qrisBtn = document.getElementById("pay-qris");
+
+  if (total > 500000) {
+    if (paymentMethod === "qris") {
+      selectPayment("transfer");
+    }
+    if (qrisBtn) {
+      qrisBtn.classList.add("opacity-50", "cursor-not-allowed");
+      qrisBtn.disabled = true;
+    }
+  } else {
+    if (qrisBtn) {
+      qrisBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      qrisBtn.disabled = false;
+    }
+  }
+}
+
+/**
  * Pilih metode pembayaran. Dipanggil dari onclick tombol metode.
  * @param {string} method - 'tunai' | 'qris' | 'transfer'
  */
 function selectPayment(method) {
+  const total = getCartTotal();
+  if (total > 500000 && method === 'qris') {
+    showToast('Transaksi di atas Rp 500.000 tidak bisa menggunakan QRIS', 'error');
+    return;
+  }
+
   paymentMethod = method;
 
   // Update styling tombol
@@ -396,10 +427,10 @@ document
     // ── Persiapkan payload (Gunakan FormData untuk mendukung upload file) ────
     const formData = new FormData();
     formData.append('items', JSON.stringify(cart.map(({ id, nama, harga, quantity }) => ({
-        id_produk: id,
-        nama,
-        harga,
-        quantity,
+      id_produk: id,
+      nama,
+      harga,
+      quantity,
     }))));
     formData.append('total', total);
     formData.append('bayar', paymentMethod === "tunai" ? bayar : total);
@@ -410,7 +441,7 @@ document
     // Ambil file bukti jika ada
     const fileInput = document.getElementById('bukti-bayar');
     if (fileInput && fileInput.files[0]) {
-        formData.append('bukti_pembayaran', fileInput.files[0]);
+      formData.append('bukti_pembayaran', fileInput.files[0]);
     }
 
     try {

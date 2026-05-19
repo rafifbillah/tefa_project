@@ -414,7 +414,6 @@ include 'includes/header.php';
                         <p style="margin: 0; font-size: 13px; color: #64748b;">Stok di Sistem (Komputer):</p>
                         <p style="margin: 5px 0 0 0; font-size: 24px; font-weight: bold; color: #334155;" id="opname_stok_sistem">0</p>
                     </div>
-
                     <div class="form-group" style="margin-bottom: 1rem;">
                         <label style="font-weight: bold; color: #D97706;">Stok Fisik (Hasil Hitung Asli di Rak) <span style="color:red;">*</span></label>
                         <input type="number" name="stok_fisik" id="opname_stok_fisik" min="0" required placeholder="0" style="width: 100%; padding: 12px; border-radius: 5px; border: 2px solid #D97706; font-size: 18px; font-weight: bold;">

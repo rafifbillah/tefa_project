@@ -53,6 +53,9 @@ class Database
                     // Aktifkan persistent connection untuk performa
                     // PDO::ATTR_PERSISTENT => true, // (opsional, hati-hati di shared hosting)
                 ]);
+
+                // Set timezone MySQL agar sinkron dengan timezone PHP (Asia/Jakarta)
+                self::$instance->exec("SET time_zone = '+07:00'");
             } catch (PDOException $e) {
                 // ─── SECURITY: Jangan expose detail error ke user ────────
                 // Log error ke file, jangan tampilkan ke browser
